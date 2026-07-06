@@ -1,4 +1,4 @@
-run = "npm run dev -- --host 0.0.0.0"
+run = "PORT=3000 npm run dev"
 
 [nix]
 channel = "stable-24_05"
