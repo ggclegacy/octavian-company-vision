@@ -55,6 +55,33 @@ function markerClass(value: string) {
   return "border-gold/35 bg-soot/70 text-bone";
 }
 
+function completionScore(answeredCount: number) {
+  return Math.round((answeredCount / flatQuestions.length) * 100);
+}
+
+function nextRecommendedAction(session: SessionState, answeredCount: number) {
+  if (session.finalizedVision.length) return "Export the finished session.";
+  if (session.generatedVisionDraft.length) return "Review the draft together.";
+  if (answeredCount >= Math.max(8, Math.round(flatQuestions.length * 0.28))) return "Generate the first vision draft.";
+  return "Continue answering session questions.";
+}
+
+function categoryProgress(category: (typeof categories)[number], session: SessionState) {
+  const answered = category.questions.filter((question) => session.answers[question.id]?.originalAnswer.trim()).length;
+  const flagged = category.questions.some((question) => {
+    const answer = session.answers[question.id];
+    return answer?.followUpNeeded || answer?.skippedAt;
+  });
+  const status = flagged
+    ? "Needs follow-up"
+    : answered === 0
+      ? "Not started"
+      : answered === category.questions.length
+        ? "Complete"
+        : "In progress";
+  return { answered, total: category.questions.length, status };
+}
+
 function App() {
   const sessionApi = useSession();
 
@@ -100,8 +127,11 @@ function Shell({
           <span>Oakfire by Octavian</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-2 text-sm">
+          <Link className="nav-link" to="/">
+            Start
+          </Link>
           <Link className="nav-link" to="/session">
-            Answer
+            Session
           </Link>
           <Link className="nav-link" to="/generate">
             Generate
@@ -115,12 +145,9 @@ function Shell({
           <Link className="nav-link" to="/export">
             Export
           </Link>
-          <Link className="nav-link" to="/present">
-            Present
-          </Link>
-          <Link className="nav-link" to="/import">
-            Import
-          </Link>
+          <span className="rounded-full border border-gold/20 bg-soot/60 px-3 py-2 font-semibold text-bone">
+            Stage: {sessionStatus(session)}
+          </span>
           <span className="rounded-full border border-gold/20 bg-coal/35 px-3 py-2 text-ash">
             Last saved: {formatLastSaved(session.lastSavedAt)}
           </span>
@@ -312,22 +339,29 @@ function SessionPage({
             Generate Vision
           </Link>
           <div className="mt-6 space-y-2">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                className={`w-full rounded-md border px-3 py-2 text-left text-sm ${
-                  category.id === item.category.id
-                    ? "border-gold bg-gold/15 text-bone"
-                    : "border-gold/15 bg-coal/35 text-ash hover:border-gold/45 hover:text-bone"
-                }`}
-                onClick={() => {
-                  const categoryIndex = flatQuestions.findIndex((question) => question.category.id === category.id);
-                  goTo(categoryIndex);
-                }}
-              >
-                {category.name}
-              </button>
-            ))}
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Category overview</p>
+            {categories.map((category) => {
+              const progress = categoryProgress(category, session);
+              return (
+                <button
+                  key={category.id}
+                  className={`w-full rounded-md border px-3 py-3 text-left text-sm ${
+                    category.id === item.category.id
+                      ? "border-gold bg-gold/15 text-bone"
+                      : "border-gold/15 bg-coal/35 text-ash hover:border-gold/45 hover:text-bone"
+                  }`}
+                  onClick={() => {
+                    const categoryIndex = flatQuestions.findIndex((question) => question.category.id === category.id);
+                    goTo(categoryIndex);
+                  }}
+                >
+                  <span className="block font-bold">{category.name}</span>
+                  <span className="mt-1 block text-xs">
+                    {progress.status} - {progress.answered}/{progress.total} answered
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </aside>
 
@@ -340,7 +374,7 @@ function SessionPage({
           <p className="text-sm font-semibold text-ash">Question {index + 1}</p>
           <h2 className="mt-2 text-2xl font-bold leading-snug text-bone sm:text-4xl">{item.text}</h2>
           <p className="mt-4 rounded-lg border border-gold/15 bg-coal/35 p-3 text-sm font-semibold text-bone">
-            Answer in your own words. The original answer stays saved.
+            Answer naturally. This is about capturing the truth first - the app will organize the answer for the vision draft.
           </p>
           <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
             <p className="text-sm font-semibold text-gold">Why this matters</p>
@@ -372,7 +406,7 @@ function SessionPage({
             </label>
             <textarea
               id="original-answer"
-              className="mt-2 min-h-52 w-full rounded-lg oak-panel p-4 text-lg leading-7 text-bone outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
+              className="mt-2 min-h-[18rem] w-full rounded-lg oak-panel p-4 text-lg leading-8 text-bone outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Octavian's answer goes here, in his own words..."
@@ -437,6 +471,15 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
   const categoriesWithAnswers = categories.filter((category) =>
     category.questions.some((question) => session.answers[question.id]?.originalAnswer.trim()),
   );
+  const strongestAreas = categories
+    .map((category) => ({ category, progress: categoryProgress(category, session) }))
+    .filter(({ progress }) => progress.answered > 0)
+    .sort((a, b) => b.progress.answered / b.progress.total - a.progress.answered / a.progress.total)
+    .slice(0, 4);
+  const weakAreas = categories
+    .map((category) => ({ category, progress: categoryProgress(category, session) }))
+    .filter(({ progress }) => progress.status !== "Complete")
+    .slice(0, 5);
 
   const handleGenerate = () => {
     if (session.generatedVisionDraft.length) {
@@ -463,10 +506,12 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
       />
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <section className="rounded-lg oak-card p-6 shadow-ember">
+          <img className="mb-5 w-24 object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Generate draft</p>
           <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Ready for the first vision draft</h1>
           <p className="mt-5 text-lg leading-8 text-ash">
-            This draft is not final. It is the first blueprint we'll review together.
+            This draft is the first blueprint. It uses Octavian's answers to shape the brand story, food identity,
+            website direction, catering path, content strategy, and future AI tools.
           </p>
           {!answeredCount && (
             <div className="mt-5 rounded-lg oak-panel p-4">
@@ -480,6 +525,7 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
             </div>
           )}
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <Metric label="Completion score" value={`${completionScore(answeredCount)}%`} />
             <Metric label="Original answers" value={`${answeredCount}/${flatQuestions.length}`} />
             <Metric label="Skipped" value={`${skippedCount}`} />
             <Metric label="Needs follow-up" value={`${followUpCount}`} />
@@ -505,6 +551,24 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
                 ? categoriesWithAnswers.map((category) => category.name).join(", ")
                 : "No categories have saved answers yet."}
             </p>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="oak-panel p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gold">Strongest answered areas</h3>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-ash">
+                {strongestAreas.length ? strongestAreas.map(({ category, progress }) => (
+                  <li key={category.id}>{category.name}: {progress.status} - {progress.answered}/{progress.total} answered</li>
+                )) : <li>No answered areas yet.</li>}
+              </ul>
+            </div>
+            <div className="oak-panel p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gold">Missing / weak areas</h3>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-ash">
+                {weakAreas.map(({ category, progress }) => (
+                  <li key={category.id}>{category.name}: {progress.status} - {progress.answered}/{progress.total} answered</li>
+                ))}
+              </ul>
+            </div>
           </div>
           <h3 className="mt-5 text-xl font-bold text-bone">Skipped / needs-follow-up / missing areas</h3>
           <div className="mt-4 max-h-[520px] overflow-auto space-y-3">
@@ -537,6 +601,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
 
   const handleFinalize = () => {
     finalizeVision();
+    sessionStorage.setItem("oakfire-finalized-message", "Vision Hub finalized. The Oakfire company blueprint is ready to review and export.");
     navigate("/vision");
   };
 
@@ -558,7 +623,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
             stronger, or what should be changed.
           </p>
           <p className="mt-2 max-w-3xl text-sm font-semibold text-bone">
-            This is feedback on the company vision, not an edit to Octavian's original answers.
+            This feedback improves the company vision. It does not overwrite Octavian's original answers.
           </p>
           <p className="mt-3 text-sm font-semibold text-bone">
             Completeness: {summary["Strong foundation"]} strong foundation, {summary["Needs follow-up"]} needs
@@ -685,6 +750,15 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
   const sections = finalVisionSections(session);
   const summary = completenessSummary(sections, session.answers);
   const completeCategories = categoriesComplete(session.answers);
+  const [finalizedMessage, setFinalizedMessage] = useState("");
+
+  useEffect(() => {
+    const message = sessionStorage.getItem("oakfire-finalized-message");
+    if (message) {
+      setFinalizedMessage(message);
+      sessionStorage.removeItem("oakfire-finalized-message");
+    }
+  }, []);
 
   return (
     <Shell session={session} clearSession={clearSession}>
@@ -723,6 +797,8 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
 
       <div className="mb-6 grid gap-3 md:grid-cols-5">
         <Metric label="Questions answered" value={`${answeredCount}/${flatQuestions.length}`} />
+        <Metric label="Session stage" value={sessionStatus(session)} />
+        <Metric label="Completion score" value={`${completionScore(answeredCount)}%`} />
         <Metric label="Skipped" value={`${skippedCount}`} />
         <Metric label="Follow-up flags" value={`${followUpCount}`} />
         <Metric label="Categories complete" value={`${completeCategories}/${categories.length}`} />
@@ -730,6 +806,10 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
         <Metric label="Partial sections" value={`${summary["Needs follow-up"]}`} />
         <Metric label="Needs follow-up sections" value={`${summary["Missing key details"]}`} />
       </div>
+
+      {finalizedMessage && (
+        <p className="mb-6 rounded-lg border border-gold/30 bg-gold/10 p-4 text-sm font-bold text-bone">{finalizedMessage}</p>
+      )}
 
       <BeforeLeavesChecklist />
 
@@ -786,7 +866,6 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
     URL.revokeObjectURL(url);
   };
 
-  const fullSession = JSON.stringify({ ...session, exportedAt: new Date().toISOString(), categories }, null, 2);
   const backup = JSON.stringify({ ...sessionBackup(session), exportedAt: new Date().toISOString() }, null, 2);
 
   return (
@@ -843,16 +922,15 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
       )}
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <ExportBlock title="Original Answers" text={original} copy={() => copy("Original answers", original)} download={() => download("octavian-original-answers.txt", original)} />
-        <ExportBlock title="Organized Answers" text={organized} copy={() => copy("Organized answers", organized)} download={() => download("octavian-organized-answers.txt", organized)} />
-        <ExportBlock title="Collaborative Review Feedback" text={feedback} copy={() => copy("Review feedback", feedback)} download={() => download("octavian-review-feedback.txt", feedback)} />
-        <ExportBlock title="Final Company Vision" text={finalVision} copy={() => copy("Final vision", finalVision)} download={() => download("octavian-final-company-vision.txt", finalVision)} />
-        <ExportBlock title="AI Prompt for Polished Vision Document" text={prompt} copy={() => copy("AI vision prompt", prompt)} download={() => download("octavian-ai-vision-prompt.txt", prompt)} wide />
-        <ExportBlock title="AI Prompt for Website Plan" text={websitePrompt} copy={() => copy("Website prompt", websitePrompt)} download={() => download("octavian-website-plan-prompt.txt", websitePrompt)} />
-        <ExportBlock title="AI Prompt for Brand Naming / Identity" text={brandPrompt} copy={() => copy("Brand identity prompt", brandPrompt)} download={() => download("octavian-brand-identity-prompt.txt", brandPrompt)} />
-        <ExportBlock title="AI Prompt for Future Personal BBQ App" text={appPrompt} copy={() => copy("BBQ app prompt", appPrompt)} download={() => download("octavian-bbq-app-prompt.txt", appPrompt)} />
-        <ExportBlock title="Full Session JSON" text={fullSession} copy={() => copy("Full session JSON", fullSession)} download={() => download("octavian-full-session.json", fullSession, "application/json")} wide />
-        <ExportBlock title="Full Session Backup JSON" text={backup} copy={() => copy("Full session backup", backup)} download={() => download("octavian-full-session-backup.json", backup, "application/json")} wide />
+        <ExportBlock title="Original Answers" text={original} copied={copied} copy={() => copy("Original Answers", original)} download={() => download("octavian-original-answers.txt", original)} />
+        <ExportBlock title="Organized Answers" text={organized} copied={copied} copy={() => copy("Organized Answers", organized)} download={() => download("octavian-organized-answers.txt", organized)} />
+        <ExportBlock title="Collaborative Review Feedback" text={feedback} copied={copied} copy={() => copy("Collaborative Review Feedback", feedback)} download={() => download("octavian-review-feedback.txt", feedback)} />
+        <ExportBlock title="Final Company Vision" text={finalVision} copied={copied} copy={() => copy("Final Company Vision", finalVision)} download={() => download("octavian-final-company-vision.txt", finalVision)} />
+        <ExportBlock title="AI Prompt for Final Vision Document" text={prompt} copied={copied} copy={() => copy("AI Prompt for Final Vision Document", prompt)} download={() => download("octavian-ai-vision-prompt.txt", prompt)} wide />
+        <ExportBlock title="AI Prompt for Website Plan" text={websitePrompt} copied={copied} copy={() => copy("AI Prompt for Website Plan", websitePrompt)} download={() => download("octavian-website-plan-prompt.txt", websitePrompt)} />
+        <ExportBlock title="AI Prompt for Brand Naming / Identity" text={brandPrompt} copied={copied} copy={() => copy("AI Prompt for Brand Naming / Identity", brandPrompt)} download={() => download("octavian-brand-identity-prompt.txt", brandPrompt)} />
+        <ExportBlock title="AI Prompt for Future Personal BBQ App" text={appPrompt} copied={copied} copy={() => copy("AI Prompt for Future Personal BBQ App", appPrompt)} download={() => download("octavian-bbq-app-prompt.txt", appPrompt)} />
+        <ExportBlock title="Full Session Backup" text={backup} copied={copied} copy={() => copy("Full Session Backup", backup)} download={() => download("octavian-full-session-backup.json", backup, "application/json")} wide />
       </div>
     </Shell>
   );
@@ -924,6 +1002,7 @@ function SessionControlCenter({
 }) {
   const navigate = useNavigate();
   const completeCategories = categoriesComplete(session.answers);
+  const nextAction = nextRecommendedAction(session, answeredCount);
 
   const updateDraft = () => {
     if (session.generatedVisionDraft.length) {
@@ -942,9 +1021,9 @@ function SessionControlCenter({
   return (
     <section className="mb-6 rounded-lg oak-card p-4">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="grid gap-2 text-sm text-ash sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-2 text-sm text-ash sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <p>
-            <span className="font-bold text-bone">Status:</span> {sessionStatus(session)}
+            <span className="font-bold text-bone">Session stage:</span> {sessionStatus(session)}
           </p>
           <p>
             <span className="font-bold text-bone">Last saved:</span> {formatLastSaved(session.lastSavedAt)}
@@ -957,6 +1036,9 @@ function SessionControlCenter({
           </p>
           <p>
             <span className="font-bold text-bone">Needs follow-up:</span> {followUpCount + skippedCount}
+          </p>
+          <p className="sm:col-span-2 xl:col-span-2">
+            <span className="font-bold text-gold">Next recommended action:</span> {nextAction}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -1044,7 +1126,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg oak-panel p-4">
       <p className="text-sm font-semibold text-ash">{label}</p>
-      <p className="mt-2 text-3xl font-black text-bone">{value}</p>
+      <p className="mt-2 break-words text-2xl font-black text-bone sm:text-3xl">{value}</p>
     </div>
   );
 }
@@ -1139,16 +1221,19 @@ function VisionSectionCard({ section, session }: { section: VisionSection; sessi
 function ExportBlock({
   title,
   text,
+  copied,
   copy,
   download,
   wide = false,
 }: {
   title: string;
   text: string;
+  copied: string;
   copy: () => void;
   download: () => void;
   wide?: boolean;
 }) {
+  const isCopied = copied.toLowerCase().includes(title.toLowerCase());
   return (
     <section className={`rounded-lg oak-card p-5 ${wide ? "xl:col-span-2" : ""}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1162,6 +1247,7 @@ function ExportBlock({
           </button>
         </div>
       </div>
+      {isCopied && <p className="mt-3 text-sm font-bold text-gold">{copied}</p>}
       <pre className="mt-4 max-h-[620px] overflow-auto whitespace-pre-wrap rounded-lg bg-smoke p-4 text-sm leading-6 text-ash">
         {text}
       </pre>

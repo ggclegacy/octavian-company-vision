@@ -146,12 +146,47 @@ const sectionMap = [
   },
 ];
 
-const weakSignals = [need, "not sure", "don't know", "dont know", "n/a", "none", "maybe", "unclear"];
+const weakSignals = [need.toLowerCase(), "skipped for now", "not sure", "don't know", "dont know", "n/a", "none", "maybe", "unclear"];
 
 export function organizeAnswerText(questionText: string, originalAnswer: string) {
   const clean = originalAnswer.replace(/\s+/g, " ").trim();
   if (!clean) return need;
-  return `Question focus: ${questionText}\nOrganized answer: ${clean}`;
+  if (clean.toLowerCase().includes("skipped for now")) return "Skipped for now - needs follow-up";
+
+  const lowerQuestion = questionText.toLowerCase();
+  const statement = clean.replace(/\bi\b/gi, "Octavian").replace(/\bmy\b/gi, "his").replace(/\bme\b/gi, "Octavian");
+  const starts = [
+    ["what made you fall in love", "Octavian's connection to barbecue is rooted in"],
+    ["what does cooking bbq mean", "For Octavian, cooking barbecue means"],
+    ["what do you want people to feel", "The Oakfire experience should make people feel"],
+    ["what name are you using", "The current naming starting point is"],
+    ["keep pit bull", "The name direction to evaluate is"],
+    ["what colors", "The visual direction should consider"],
+    ["brand feel", "The brand should feel"],
+    ["what meats", "The strongest meat offerings appear to be"],
+    ["what are your best sides", "The strongest side offerings appear to be"],
+    ["what do people compliment", "Customer praise currently points toward"],
+    ["one plate", "The hero plate candidate is"],
+    ["different from other local", "The clearest local difference is"],
+    ["next 6 months", "The near-term business milestone is"],
+    ["next 1-2 years", "The one-to-two-year direction is"],
+    ["long-term dream", "The long-term vision is"],
+    ["which paths interest", "The business paths worth exploring are"],
+    ["website help", "The website's job should be to"],
+    ["main goal", "The primary website goal should be"],
+    ["types of events", "The catering direction should focus on"],
+    ["size event", "Current catering capacity appears to be"],
+    ["equipment", "Current operating capacity is shaped by"],
+    ["food costs", "Pricing and margin clarity currently stands at"],
+    ["youtube channel", "The content engine is rooted in"],
+    ["kind of content", "The content direction should include"],
+    ["how often", "A realistic content rhythm is"],
+    ["ai could help", "The first AI opportunity is"],
+    ["app to help", "A future personal BBQ app should help with"],
+    ["understand most", "The most important vision signal is"],
+  ] as const;
+  const match = starts.find(([needle]) => lowerQuestion.includes(needle));
+  return match ? `${match[1]} ${statement}.` : `Brand-useful statement: ${statement}.`;
 }
 
 export function answerValue(answers: Record<string, AnswerRecord>, questionId: string) {
@@ -195,6 +230,18 @@ export function categoriesComplete(answers: Record<string, AnswerRecord>) {
 
 function line(label: string, answers: Record<string, AnswerRecord>, questionId: string) {
   return `${label}: ${answerValue(answers, questionId)}`;
+}
+
+function needsNote(answers: Record<string, AnswerRecord>, questionId: string) {
+  const answer = answers[questionId];
+  if (answer?.skippedAt) return `${answer.questionText} - skipped for now; revisit before final external use.`;
+  if (answer?.followUpNeeded) return `${answer.questionText} - marked needs follow-up.`;
+  if (!answer?.originalAnswer.trim()) return `${flatQuestionText(questionId)} - not answered yet.`;
+  return "";
+}
+
+function flatQuestionText(questionId: string) {
+  return categories.flatMap((category) => category.questions).find((question) => question.id === questionId)?.text || questionId;
 }
 
 function firstMove(label: string, answer: string, recommendation: string) {
@@ -305,12 +352,14 @@ export function generateFirstVisionDraft(answers: Record<string, AnswerRecord>):
     sourceQuestionIds: section.sourceQuestionIds,
     strategicRead: section.strategicRead,
     body: [
+      `Draft content: ${section.title} translates the saved answers into a working business blueprint for Oakfire by Octavian.`,
       ...section.lines.map(([label, questionId]) => line(label, answers, questionId)),
       `Strategic read: ${section.strategicRead} This read is based only on the saved answers above.`,
+      ...section.sourceQuestionIds.map((questionId) => needsNote(answers, questionId)).filter(Boolean).map((note) => `Needs-follow-up note: ${note}`),
     ],
   }));
 
-  return [...draft, buildThirtyDayMoves(answers), buildFollowUps(answers)];
+  return [...draft, buildThirtyDayMoves(answers), buildFutureRoadmap(answers), buildFollowUps(answers)];
 }
 
 export function normalizeFeedback(value: unknown): ReviewFeedback {
@@ -348,7 +397,7 @@ export function buildFinalizedVision(
   });
 
   return [
-    ...refined.filter((section) => section.id !== "follow-up-questions"),
+    ...refined.filter((section) => section.id !== "follow-up-questions" && section.id !== "future-build-roadmap"),
     buildFutureRoadmap(answers),
     buildFollowUps(answers),
   ];
@@ -421,6 +470,7 @@ export function finalVisionSections(session: SessionState) {
 }
 
 export function sessionStatus(session: SessionState) {
+  if (session.stage) return session.stage;
   if (session.finalizedVision.length) return "Finalized";
   if (Object.values(session.reviewFeedback).some((feedback) => Object.values(normalizeFeedback(feedback)).some(Boolean))) {
     return "Review in progress";
@@ -458,6 +508,8 @@ export function sessionBackup(session: SessionState) {
     generatedVisionDraftUpdatedAt: session.generatedVisionDraftUpdatedAt,
     reviewFeedback: session.reviewFeedback,
     finalizedVision: session.finalizedVision,
+    finalizedAt: session.finalizedAt,
+    stage: session.stage,
   };
 }
 
@@ -466,7 +518,9 @@ export function finalVisionText(session: SessionState) {
 }
 
 function promptFrame(session: SessionState, task: string) {
-  return `Context: Neil is helping Octavian turn his BBQ passion into a real company vision. Preserve Octavian's original answers as source material. Use the organized answers, collaborative feedback, and final vision to create the requested output. Do not invent facts; mark unclear items as follow-up questions.
+  return `Context: Neil is helping Octavian turn Oakfire by Octavian into a real barbecue company vision. Brand palette: Charred Black #0E0D0B, Crown Gold #D6A43A, Blackened Oak Green #1B2D24, Bone Cream #F0E4D0, Smoked Iron #34302B, Ember Glow #7A2418 used sparingly. The tone should feel premium, masculine, warm, elite, smokehouse-inspired, timeless, and refined.
+
+Preserve Octavian's original answers as source material. Use the organized answers, collaborative feedback, and final vision to create the requested output. Do not invent facts; mark unclear items as follow-up questions.
 
 ${task}
 

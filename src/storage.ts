@@ -31,12 +31,14 @@ export type SessionState = {
   sessionId: string;
   createdAt: string;
   updatedAt: string;
+  stage: "Not Started" | "Answering" | "Draft Generated" | "Reviewing" | "Finalized";
   currentQuestionIndex: number;
   answers: Record<string, AnswerRecord>;
   generatedVisionDraft: VisionSection[];
   generatedVisionDraftUpdatedAt: string | null;
   reviewFeedback: Record<string, ReviewFeedback>;
   finalizedVision: VisionSection[];
+  finalizedAt: string | null;
   lastSavedAt: string | null;
 };
 
@@ -50,12 +52,14 @@ function newSession(): SessionState {
     sessionId: `octavian-${Date.now()}`,
     createdAt,
     updatedAt: createdAt,
+    stage: "Not Started",
     currentQuestionIndex: 0,
     answers: {},
     generatedVisionDraft: [],
     generatedVisionDraftUpdatedAt: null,
     reviewFeedback: {},
     finalizedVision: [],
+    finalizedAt: null,
     lastSavedAt: null,
   };
 }
@@ -114,18 +118,28 @@ function normalizeSession(value: unknown): SessionState {
     });
   }
 
-  return {
+  const imported: SessionState = {
     sessionId: raw.sessionId || fresh.sessionId,
     createdAt: raw.createdAt || fresh.createdAt,
     updatedAt: raw.updatedAt || raw.lastUpdated || fresh.updatedAt,
+    stage: raw.stage || "Not Started",
     currentQuestionIndex: Number.isFinite(raw.currentQuestionIndex) ? Number(raw.currentQuestionIndex) : 0,
     answers,
     generatedVisionDraft: Array.isArray(raw.generatedVisionDraft) ? raw.generatedVisionDraft : [],
     generatedVisionDraftUpdatedAt: raw.generatedVisionDraftUpdatedAt || null,
     reviewFeedback,
     finalizedVision: Array.isArray(raw.finalizedVision) ? raw.finalizedVision : [],
+    finalizedAt: raw.finalizedAt || null,
     lastSavedAt: raw.lastSavedAt || raw.lastUpdated || null,
   };
+  if (imported.finalizedVision.length) imported.stage = "Finalized";
+  else if (Object.values(imported.reviewFeedback).some((feedback) => Object.values(normalizeFeedback(feedback)).some(Boolean))) {
+    imported.stage = "Reviewing";
+  } else if (imported.generatedVisionDraft.length) imported.stage = "Draft Generated";
+  else if (Object.values(imported.answers).some((answer) => answer.originalAnswer.trim() || answer.skippedAt || answer.followUpNeeded)) {
+    imported.stage = "Answering";
+  }
+  return imported;
 }
 
 function readSession(): SessionState {
@@ -158,6 +172,7 @@ export function useSession() {
 
       touch((current, timestamp) => ({
         ...current,
+        stage: current.finalizedVision.length ? current.stage : "Answering",
         answers: {
           ...current.answers,
           [questionId]: {
@@ -186,6 +201,7 @@ export function useSession() {
         const answerText = originalAnswer ?? existing?.originalAnswer ?? "";
         return {
           ...current,
+          stage: current.finalizedVision.length ? current.stage : "Answering",
           answers: {
             ...current.answers,
             [questionId]: {
@@ -216,7 +232,14 @@ export function useSession() {
     let draft: VisionSection[] = [];
     touch((current) => {
       draft = generateFirstVisionDraft(current.answers);
-      return { ...current, generatedVisionDraft: draft, generatedVisionDraftUpdatedAt: current.updatedAt, finalizedVision: [] };
+      return {
+        ...current,
+        stage: "Draft Generated",
+        generatedVisionDraft: draft,
+        generatedVisionDraftUpdatedAt: current.updatedAt,
+        finalizedVision: [],
+        finalizedAt: null,
+      };
     });
     return draft;
   }, [touch]);
@@ -230,6 +253,7 @@ export function useSession() {
         const existing = current.answers[questionId];
         return {
           ...current,
+          stage: current.finalizedVision.length ? current.stage : "Answering",
           answers: {
             ...current.answers,
             [questionId]: {
@@ -258,6 +282,7 @@ export function useSession() {
         const existing = current.answers[questionId];
         return {
           ...current,
+          stage: current.finalizedVision.length ? current.stage : "Answering",
           answers: {
             ...current.answers,
             [questionId]: {
@@ -281,6 +306,7 @@ export function useSession() {
     (sectionId: string, feedback: ReviewFeedback) => {
       touch((current) => ({
         ...current,
+        stage: current.finalizedVision.length ? "Finalized" : "Reviewing",
         reviewFeedback: { ...current.reviewFeedback, [sectionId]: normalizeFeedback(feedback) },
       }));
     },
@@ -297,6 +323,8 @@ export function useSession() {
         generatedVisionDraft: draft,
         generatedVisionDraftUpdatedAt: current.generatedVisionDraftUpdatedAt || current.updatedAt,
         finalizedVision: finalized,
+        finalizedAt: current.updatedAt,
+        stage: "Finalized",
       };
     });
     return finalized;
