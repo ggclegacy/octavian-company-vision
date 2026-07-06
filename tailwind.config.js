@@ -4,17 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        coal: "#0d0c0a",
-        soot: "#171512",
-        smoke: "#24211d",
-        ember: "#c98f33",
-        gold: "#e0b15f",
-        bone: "#f5efe5",
-        ash: "#bdb4a8",
-        iron: "#7c766d"
+        coal: "#0E0D0B",
+        soot: "#1B2D24",
+        smoke: "#34302B",
+        ember: "#7A2418",
+        gold: "#D6A43A",
+        bone: "#F0E4D0",
+        ash: "#C9BDA9",
+        iron: "#8D867A"
       },
       boxShadow: {
-        ember: "0 18px 60px rgba(201, 143, 51, 0.15)"
+        ember: "0 22px 70px rgba(214, 164, 58, 0.14)",
+        oak: "0 24px 80px rgba(0, 0, 0, 0.42)"
       }
     },
   },

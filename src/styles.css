@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  background: #0d0c0a;
+  background: #0e0d0b;
 }
 
 button,
@@ -25,18 +25,30 @@ button:disabled {
 
 @layer components {
   .primary-button {
-    @apply inline-flex items-center justify-center rounded-md border border-gold bg-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[0.12em] text-coal shadow-ember transition hover:bg-ember focus:outline-none focus:ring-4 focus:ring-gold/30;
+    @apply inline-flex items-center justify-center rounded-md border border-gold bg-gradient-to-b from-[#E2B957] to-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[0.12em] text-coal shadow-ember transition hover:-translate-y-0.5 hover:from-[#EDC86D] hover:to-[#D6A43A] focus:outline-none focus:ring-4 focus:ring-gold/30;
   }
 
   .secondary-button {
-    @apply inline-flex items-center justify-center rounded-md border border-gold/50 bg-gold/10 px-4 py-3 text-center text-sm font-bold text-bone transition hover:border-gold hover:bg-gold/20 focus:outline-none focus:ring-4 focus:ring-gold/30;
+    @apply inline-flex items-center justify-center rounded-md border border-gold/45 bg-soot/80 px-4 py-3 text-center text-sm font-bold text-bone transition hover:-translate-y-0.5 hover:border-gold hover:bg-smoke focus:outline-none focus:ring-4 focus:ring-gold/25;
   }
 
   .quiet-button {
-    @apply rounded-md border border-white/10 px-3 py-2 text-sm font-semibold text-ash transition hover:border-gold hover:text-white focus:outline-none focus:ring-4 focus:ring-gold/30;
+    @apply rounded-md border border-ember/45 bg-ember/10 px-3 py-2 text-sm font-semibold text-bone transition hover:border-ember hover:bg-ember/20 hover:text-white focus:outline-none focus:ring-4 focus:ring-ember/25;
   }
 
   .nav-link {
-    @apply rounded-md border border-white/10 px-3 py-2 font-semibold text-bone transition hover:border-gold hover:bg-gold/10 focus:outline-none focus:ring-4 focus:ring-gold/30;
+    @apply rounded-md border border-gold/20 bg-coal/35 px-3 py-2 font-semibold text-bone transition hover:border-gold hover:bg-gold/10 focus:outline-none focus:ring-4 focus:ring-gold/25;
+  }
+
+  .oak-card {
+    @apply rounded-lg border border-gold/20 bg-soot/85 shadow-oak;
+  }
+
+  .oak-panel {
+    @apply rounded-lg border border-gold/15 bg-smoke/70;
+  }
+
+  .oak-input {
+    @apply rounded-lg border border-gold/20 bg-smoke p-4 text-bone outline-none ring-gold/25 placeholder:text-iron focus:border-gold focus:ring-4;
   }
 }

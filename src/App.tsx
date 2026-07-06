@@ -23,6 +23,8 @@ import {
   type VisionSection,
 } from "./vision";
 
+const oakfireLogoSrc = "/oakfirelogo.png";
+
 declare global {
   interface Window {
     SpeechRecognition?: SpeechRecognitionConstructor;
@@ -47,12 +49,19 @@ type SpeechRecognitionEvent = {
 
 type SessionProps = ReturnType<typeof useSession>;
 
+function markerClass(value: string) {
+  if (value.includes("Strong")) return "border-gold/55 bg-gold/15 text-bone";
+  if (value.includes("Missing") || value.includes("follow-up")) return "border-ember/55 bg-ember/20 text-bone";
+  return "border-gold/35 bg-soot/70 text-bone";
+}
+
 function App() {
   const sessionApi = useSession();
 
   return (
     <div className="min-h-screen bg-coal text-bone">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_15%_10%,rgba(224,177,95,0.13),transparent_28%),linear-gradient(135deg,#0d0c0a,#171512_48%,#0d0c0a)]" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(27,45,36,0.72),transparent_34%),radial-gradient(circle_at_50%_105%,rgba(122,36,24,0.32),transparent_32%),radial-gradient(circle_at_8%_8%,rgba(214,164,58,0.1),transparent_24%),linear-gradient(180deg,#0E0D0B_0%,#12110E_42%,#0E0D0B_100%)]" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.44)_78%),linear-gradient(90deg,rgba(240,228,208,0.025)_1px,transparent_1px),linear-gradient(180deg,rgba(240,228,208,0.018)_1px,transparent_1px)] bg-[length:auto,72px_72px,72px_72px]" />
       <Routes>
         <Route path="/" element={<StartPage {...sessionApi} />} />
         <Route path="/session" element={<SessionPage {...sessionApi} />} />
@@ -85,9 +94,10 @@ function Shell({
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-5 sm:px-8 lg:px-10">
-      <header className="mb-8 flex flex-col gap-4 border-b border-white/10 pb-5 xl:flex-row xl:items-center xl:justify-between">
-        <Link to="/" className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">
-          Octavian Vision Builder
+      <header className="mb-8 flex flex-col gap-4 border-b border-gold/20 pb-5 xl:flex-row xl:items-center xl:justify-between">
+        <Link to="/" className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.18em] text-gold">
+          <img className="h-11 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <span>Oakfire by Octavian</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-2 text-sm">
           <Link className="nav-link" to="/session">
@@ -111,7 +121,7 @@ function Shell({
           <Link className="nav-link" to="/import">
             Import
           </Link>
-          <span className="rounded-full border border-white/10 px-3 py-2 text-ash">
+          <span className="rounded-full border border-gold/20 bg-coal/35 px-3 py-2 text-ash">
             Last saved: {formatLastSaved(session.lastSavedAt)}
           </span>
           <button className="quiet-button" onClick={handleClear}>
@@ -135,12 +145,18 @@ function StartPage(props: SessionProps) {
 
   return (
     <Shell {...props}>
-      <section className="grid flex-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-gold">Guided company vision session</p>
-          <h1 className="text-4xl font-black leading-tight text-white sm:text-6xl">Octavian Company Vision Builder</h1>
+      <section className="flex flex-1 flex-col justify-center">
+        <img
+          className="mx-auto mb-10 w-[190px] max-w-[70vw] object-contain drop-shadow-[0_24px_45px_rgba(0,0,0,0.45)] sm:w-[260px] lg:w-[300px]"
+          src={oakfireLogoSrc}
+          alt="Oakfire by Octavian"
+        />
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="max-w-3xl">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-gold">Exclusive private barbecue vision session</p>
+          <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl">Octavian Company Vision Builder</h1>
           <p className="mt-5 max-w-2xl text-xl leading-8 text-bone">
-            A guided session to turn the food, the story, and the business vision into a real company blueprint.
+            A guided Oakfire by Octavian session to turn the food, the story, and the business vision into a real company blueprint.
           </p>
           <div className="mt-8 max-w-2xl space-y-5 text-lg leading-8 text-ash">
             <p>This is not a form to fill out alone.</p>
@@ -162,20 +178,21 @@ function StartPage(props: SessionProps) {
               wording to help build the vision.
             </p>
           </div>
-        </div>
+          </div>
 
-        <div className="rounded-lg border border-white/10 bg-soot/85 p-6 shadow-ember">
-          <h2 className="text-2xl font-black text-white">How the session works</h2>
+          <div className="oak-card p-6">
+          <h2 className="text-2xl font-black text-bone">How the session works</h2>
           <ol className="mt-5 space-y-4">
             {steps.map((step, index) => (
-              <li key={step} className="flex gap-4 rounded-md border border-white/10 bg-white/[0.03] p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gold text-sm font-black text-gold">
+              <li key={step} className="flex gap-4 rounded-md border border-gold/15 bg-coal/35 p-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gold bg-gold/10 text-sm font-black text-gold">
                   {index + 1}
                 </span>
                 <span className="font-semibold text-bone">{step}</span>
               </li>
             ))}
           </ol>
+          </div>
         </div>
       </section>
     </Shell>
@@ -282,10 +299,10 @@ function SessionPage({
         generateDraft={generateDraft}
       />
       <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="rounded-lg border border-white/10 bg-soot/80 p-4">
+        <aside className="rounded-lg oak-card p-4">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Answer Session</p>
           <div className="mt-4 h-3 rounded-full bg-white/10" aria-label={`${progress}% complete`}>
-            <div className="h-3 rounded-full bg-gold" style={{ width: `${progress}%` }} />
+            <div className="h-3 rounded-full bg-gradient-to-r from-gold to-[#E8C56D]" style={{ width: `${progress}%` }} />
           </div>
           <p className="mt-3 text-sm leading-6 text-ash">
             Question {index + 1} of {total}. {answeredCount} answered. {skippedCount} skipped. {followUpCount} needs
@@ -300,8 +317,8 @@ function SessionPage({
                 key={category.id}
                 className={`w-full rounded-md border px-3 py-2 text-left text-sm ${
                   category.id === item.category.id
-                    ? "border-gold bg-gold/15 text-white"
-                    : "border-white/10 bg-white/[0.03] text-ash"
+                    ? "border-gold bg-gold/15 text-bone"
+                    : "border-gold/15 bg-coal/35 text-ash hover:border-gold/45 hover:text-bone"
                 }`}
                 onClick={() => {
                   const categoryIndex = flatQuestions.findIndex((question) => question.category.id === category.id);
@@ -314,15 +331,15 @@ function SessionPage({
           </div>
         </aside>
 
-        <article className="rounded-lg border border-white/10 bg-soot/90 p-5 shadow-ember sm:p-8">
-          <div className="mb-6 border-b border-white/10 pb-5">
+        <article className="rounded-lg oak-card p-5 shadow-ember sm:p-8">
+          <div className="mb-6 border-b border-gold/15 pb-5">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">{item.category.name}</p>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-ash">{item.category.purpose}</p>
           </div>
 
           <p className="text-sm font-semibold text-ash">Question {index + 1}</p>
-          <h2 className="mt-2 text-2xl font-bold leading-snug text-white sm:text-4xl">{item.text}</h2>
-          <p className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-sm font-semibold text-bone">
+          <h2 className="mt-2 text-2xl font-bold leading-snug text-bone sm:text-4xl">{item.text}</h2>
+          <p className="mt-4 rounded-lg border border-gold/15 bg-coal/35 p-3 text-sm font-semibold text-bone">
             Answer in your own words. The original answer stays saved.
           </p>
           <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
@@ -342,7 +359,7 @@ function SessionPage({
                 <span className="self-center text-sm font-semibold text-ash">{voiceStatus}</span>
               </div>
             ) : (
-              <p className="mb-3 rounded-lg border border-white/10 bg-white/[0.04] p-3 text-sm text-ash">
+              <p className="mb-3 rounded-lg border border-gold/15 bg-smoke/70 p-3 text-sm text-ash">
                 Voice input is not supported in this browser. You can still type the answer.
               </p>
             )}
@@ -355,20 +372,20 @@ function SessionPage({
             </label>
             <textarea
               id="original-answer"
-              className="mt-2 min-h-52 w-full rounded-lg border border-white/10 bg-coal p-4 text-lg leading-7 text-white outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
+              className="mt-2 min-h-52 w-full rounded-lg oak-panel p-4 text-lg leading-7 text-bone outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Octavian's answer goes here, in his own words..."
             />
-            <div className="mt-4 rounded-lg border border-white/10 bg-coal p-4">
+            <div className="mt-4 rounded-lg oak-panel p-4">
               <p className="text-sm font-semibold text-gold">Organized answer for vision</p>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ash">
                 {answer?.organizedAnswer || "Not organized yet. Original answer will be used until this is generated."}
               </p>
             </div>
-            <label className="mt-4 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm font-semibold text-bone">
+            <label className="mt-4 flex items-center gap-3 rounded-lg border border-gold/15 bg-coal/35 p-4 text-sm font-semibold text-bone">
               <input
-                className="h-5 w-5 accent-[#e0b15f]"
+                className="h-5 w-5 accent-[#D6A43A]"
                 type="checkbox"
                 checked={followUpChecked}
                 onChange={(event) => {
@@ -445,14 +462,14 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
         generateDraft={generateDraft}
       />
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-lg border border-white/10 bg-soot/90 p-6 shadow-ember">
+        <section className="rounded-lg oak-card p-6 shadow-ember">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Generate draft</p>
-          <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Ready for the first vision draft</h1>
+          <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Ready for the first vision draft</h1>
           <p className="mt-5 text-lg leading-8 text-ash">
             This draft is not final. It is the first blueprint we'll review together.
           </p>
           {!answeredCount && (
-            <div className="mt-5 rounded-lg border border-white/10 bg-coal p-4">
+            <div className="mt-5 rounded-lg oak-panel p-4">
               <p className="font-semibold text-bone">No answers are saved yet.</p>
               <p className="mt-2 text-sm leading-6 text-ash">
                 Start with the answer session, save a few responses, then come back here to build the first draft.
@@ -479,9 +496,9 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
           </button>
         </section>
 
-        <section className="rounded-lg border border-white/10 bg-soot/80 p-6">
-          <h2 className="text-2xl font-bold text-white">Session readiness</h2>
-          <div className="mt-4 rounded-lg border border-white/10 bg-coal p-4">
+        <section className="rounded-lg oak-card p-6">
+          <h2 className="text-2xl font-bold text-bone">Session readiness</h2>
+          <div className="mt-4 rounded-lg oak-panel p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gold">Categories with answers</h3>
             <p className="mt-2 text-sm leading-6 text-ash">
               {categoriesWithAnswers.length
@@ -489,14 +506,14 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
                 : "No categories have saved answers yet."}
             </p>
           </div>
-          <h3 className="mt-5 text-xl font-bold text-white">Skipped / needs-follow-up / missing areas</h3>
+          <h3 className="mt-5 text-xl font-bold text-bone">Skipped / needs-follow-up / missing areas</h3>
           <div className="mt-4 max-h-[520px] overflow-auto space-y-3">
             {missing.length ? (
               missing.map((question) => {
                 const answer = session.answers[question.id];
                 const status = answer?.skippedAt ? "Skipped for now" : "Needs follow-up";
                 return (
-                  <div key={question.id} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                  <div key={question.id} className="rounded-md border border-gold/15 bg-coal/35 p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold">{question.category.name}</p>
                     <p className="mt-1 text-sm leading-6 text-ash">{question.text}</p>
                     <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-bone">{status}</p>
@@ -535,7 +552,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
       <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Collaborative review</p>
-          <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Review the first vision draft</h1>
+          <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Review the first vision draft</h1>
           <p className="mt-3 max-w-3xl text-ash">
             Use this space to sharpen the direction together. Add what feels right, what feels wrong, what needs to be
             stronger, or what should be changed.
@@ -560,7 +577,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
 
       {!session.generatedVisionDraft.length && (
         <div className="mb-6 rounded-lg border border-gold/30 bg-gold/10 p-5">
-          <h2 className="text-xl font-black text-white">No vision draft has been generated yet.</h2>
+          <h2 className="text-xl font-black text-bone">No vision draft has been generated yet.</h2>
           <p className="mt-2 text-sm leading-6 text-bone">
             Generate the first draft, then come back here to review the company vision together.
           </p>
@@ -605,9 +622,9 @@ function ReviewSection({
   const marker = sectionCompleteness(section, session.answers);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-soot/85 p-5">
+    <section className="rounded-lg oak-card p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold text-white">{section.title}</h2>
+        <h2 className="text-2xl font-bold text-bone">{section.title}</h2>
         <CompletenessMarker value={marker} />
       </div>
       <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_0.9fr]">
@@ -626,7 +643,7 @@ function ReviewSection({
           <div className="mt-3 max-h-64 overflow-auto space-y-3">
             {sources.length ? (
               sources.map((source) => (
-                <div key={source.questionId} className="rounded-md border border-white/10 bg-coal p-3">
+                <div key={source.questionId} className="rounded-md oak-panel p-3">
                   <p className="text-sm font-semibold text-bone">{source.questionText}</p>
                   <p className="mt-2 text-sm leading-6 text-ash">{source.organizedAnswer || source.originalAnswer}</p>
                 </div>
@@ -679,13 +696,17 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
         generateDraft={generateDraft}
       />
       <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Session-Based Draft</p>
-          <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Octavian BBQ Company Vision</h1>
-          <p className="mt-3 text-ash">
-            {answeredCount} of {flatQuestions.length} original answers saved. Last saved:{" "}
-            {formatLastSaved(session.lastSavedAt)}.
-          </p>
+        <div className="flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-center">
+          <img className="w-28 shrink-0 object-contain sm:w-36" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Session-Based Company Blueprint</p>
+            <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Oakfire by Octavian Vision Hub</h1>
+            <p className="mt-3 text-ash">
+              {answeredCount} of {flatQuestions.length} original answers saved. Last saved:{" "}
+              {formatLastSaved(session.lastSavedAt)}. Completion summary: {summary["Strong foundation"]} strong,{" "}
+              {summary["Needs follow-up"]} needs follow-up, {summary["Missing key details"]} missing key details.
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link className="secondary-button" to="/review">
@@ -713,8 +734,8 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
       <BeforeLeavesChecklist />
 
       {!answeredCount && (
-        <div className="mb-6 rounded-lg border border-white/10 bg-soot/85 p-5">
-          <h2 className="text-xl font-black text-white">No saved answers yet.</h2>
+        <div className="mb-6 rounded-lg oak-card p-5">
+          <h2 className="text-xl font-black text-bone">No saved answers yet.</h2>
           <p className="mt-2 text-sm leading-6 text-ash">
             Start the answer session first. Once Octavian saves answers, this page becomes the company vision hub.
           </p>
@@ -779,7 +800,11 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
       />
       <div className="mb-7">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Session package</p>
-        <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Export / Copy</h1>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Oakfire Session Artifacts</h1>
+        <p className="mt-3 max-w-3xl text-ash">
+          Collect the final materials from the Oakfire by Octavian session: raw answers, organized direction, review
+          notes, final vision, prompts, and a full backup.
+        </p>
         <p className="mt-3 text-sm font-semibold text-bone">
           Completeness: {summary["Strong foundation"]} strong foundation, {summary["Needs follow-up"]} needs follow-up,{" "}
           {summary["Missing key details"]} missing key details.
@@ -788,7 +813,7 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
       </div>
 
       <div className="mb-6 rounded-lg border border-gold/30 bg-gold/10 p-5">
-        <h2 className="text-xl font-black text-white">Session Backup</h2>
+        <h2 className="text-xl font-black text-bone">Session Backup</h2>
         <p className="mt-2 text-sm leading-6 text-bone">Use this as a backup before clearing or moving devices.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
@@ -806,8 +831,8 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
       <BeforeLeavesChecklist />
 
       {!answeredCount && (
-        <div className="mb-6 rounded-lg border border-white/10 bg-soot/85 p-5">
-          <h2 className="text-xl font-black text-white">Nothing to export yet.</h2>
+        <div className="mb-6 rounded-lg oak-card p-5">
+          <h2 className="text-xl font-black text-bone">Nothing to export yet.</h2>
           <p className="mt-2 text-sm leading-6 text-ash">
             Save at least one answer first, then come back here for copy-ready outputs and backups.
           </p>
@@ -861,9 +886,9 @@ function ImportPage({ session, clearSession, importSession }: SessionProps) {
 
   return (
     <Shell session={session} clearSession={clearSession}>
-      <section className="mx-auto max-w-3xl rounded-lg border border-white/10 bg-soot/90 p-6 shadow-ember">
+      <section className="mx-auto max-w-3xl rounded-lg oak-card p-6 shadow-ember">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Safety tool</p>
-        <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Import Session Backup</h1>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Import Session Backup</h1>
         <p className="mt-4 text-base leading-7 text-ash">
           Use this if Neil needs to move devices or restore a saved session JSON. Importing replaces the current local
           saved session after confirmation.
@@ -873,12 +898,12 @@ function ImportPage({ session, clearSession, importSession }: SessionProps) {
         </label>
         <input
           id="backup-file"
-          className="mt-2 w-full rounded-lg border border-white/10 bg-coal p-4 text-bone file:mr-4 file:rounded-md file:border-0 file:bg-gold file:px-4 file:py-2 file:font-bold file:text-coal"
+          className="mt-2 w-full rounded-lg oak-panel p-4 text-bone file:mr-4 file:rounded-md file:border-0 file:bg-gold file:px-4 file:py-2 file:font-bold file:text-coal"
           type="file"
           accept="application/json,.json"
           onChange={(event) => handleImport(event.target.files?.[0] || null)}
         />
-        {message && <p className="mt-4 rounded-lg border border-white/10 bg-coal p-4 text-sm font-semibold text-bone">{message}</p>}
+        {message && <p className="mt-4 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
       </section>
     </Shell>
   );
@@ -915,7 +940,7 @@ function SessionControlCenter({
   };
 
   return (
-    <section className="mb-6 rounded-lg border border-white/10 bg-soot/80 p-4">
+    <section className="mb-6 rounded-lg oak-card p-4">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="grid gap-2 text-sm text-ash sm:grid-cols-2 lg:grid-cols-5">
           <p>
@@ -959,11 +984,11 @@ function SessionControlCenter({
 function BeforeLeavesChecklist() {
   return (
     <section className="my-6 rounded-lg border border-gold/30 bg-gold/10 p-5">
-      <h2 className="text-xl font-black text-white">Before Octavian Leaves</h2>
+      <h2 className="text-xl font-black text-bone">Before Octavian Leaves</h2>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {beforeOctavianLeavesChecklist().map((item) => (
           <label key={item} className="flex items-start gap-3 text-sm font-semibold leading-6 text-bone">
-            <input className="mt-1 h-5 w-5 accent-[#e0b15f]" type="checkbox" />
+            <input className="mt-1 h-5 w-5 accent-[#D6A43A]" type="checkbox" />
             {item}
           </label>
         ))}
@@ -977,15 +1002,18 @@ function PresentPage({ session }: SessionProps) {
   const summary = completenessSummary(sections, session.answers);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-8 py-8 text-bone">
-      <div className="mb-8 flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
-        <div>
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8 text-bone sm:px-8">
+      <div className="mb-8 flex flex-col gap-4 border-b border-gold/20 pb-6 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <img className="w-24 shrink-0 object-contain sm:w-32" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <div>
           <p className="text-base font-semibold uppercase tracking-[0.2em] text-gold">Presentation Mode</p>
-          <h1 className="mt-2 text-5xl font-black text-white">Octavian BBQ Company Vision</h1>
+          <h1 className="mt-2 text-4xl font-black text-bone sm:text-5xl">Oakfire by Octavian Vision Hub</h1>
           <p className="mt-3 text-xl text-ash">
             {summary["Strong foundation"]} strong foundation, {summary["Needs follow-up"]} needs follow-up,{" "}
             {summary["Missing key details"]} missing key details.
           </p>
+          </div>
         </div>
         <Link className="secondary-button" to="/vision">
           Exit Presentation
@@ -993,9 +1021,9 @@ function PresentPage({ session }: SessionProps) {
       </div>
       <div className="grid gap-6">
         {sections.map((section) => (
-          <section key={section.id} className="rounded-lg border border-white/10 bg-soot/90 p-7 shadow-ember">
+          <section key={section.id} className="rounded-lg oak-card p-7 shadow-ember">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <h2 className="text-3xl font-black text-white">{section.title}</h2>
+              <h2 className="text-3xl font-black text-bone">{section.title}</h2>
               <CompletenessMarker value={sectionCompleteness(section, session.answers)} />
             </div>
             <ul className="mt-5 space-y-4 text-xl leading-9 text-bone">
@@ -1014,16 +1042,16 @@ function PresentPage({ session }: SessionProps) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-coal p-4">
+    <div className="rounded-lg oak-panel p-4">
       <p className="text-sm font-semibold text-ash">{label}</p>
-      <p className="mt-2 text-3xl font-black text-white">{value}</p>
+      <p className="mt-2 text-3xl font-black text-bone">{value}</p>
     </div>
   );
 }
 
 function CompletenessMarker({ value }: { value: string }) {
   return (
-    <span className="inline-flex rounded-full border border-gold/40 bg-gold/10 px-3 py-2 text-sm font-black uppercase tracking-[0.1em] text-bone">
+    <span className={`inline-flex rounded-full border px-3 py-2 text-sm font-black uppercase tracking-[0.1em] ${markerClass(value)}`}>
       Completeness: {value}
     </span>
   );
@@ -1047,7 +1075,7 @@ function FeedbackField({
       </label>
       <textarea
         id={id}
-        className="mt-2 min-h-32 w-full rounded-lg border border-white/10 bg-coal p-4 text-base leading-7 text-white outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
+        className="mt-2 min-h-32 w-full rounded-lg oak-panel p-4 text-base leading-7 text-bone outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Add notes from the review conversation..."
@@ -1069,9 +1097,9 @@ function VisionSectionCard({ section, session }: { section: VisionSection; sessi
   ].filter(Boolean);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-soot/85 p-5 shadow-ember">
+    <section className="rounded-lg oak-card p-5 shadow-ember">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <h2 className="text-2xl font-black text-white">{section.title}</h2>
+        <h2 className="text-2xl font-black text-bone">{section.title}</h2>
         <CompletenessMarker value={sectionCompleteness(section, session.answers)} />
       </div>
       <ul className="mt-4 space-y-3 text-base leading-7 text-ash">
@@ -1092,7 +1120,7 @@ function VisionSectionCard({ section, session }: { section: VisionSection; sessi
         </div>
       )}
       {sources.length > 0 && (
-        <div className="mt-5 rounded-lg border border-white/10 bg-coal p-4">
+        <div className="mt-5 rounded-lg oak-panel p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gold">Source answer summary</h3>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-ash">
             {sources.map((source) => (
@@ -1122,9 +1150,9 @@ function ExportBlock({
   wide?: boolean;
 }) {
   return (
-    <section className={`rounded-lg border border-white/10 bg-soot/85 p-5 ${wide ? "xl:col-span-2" : ""}`}>
+    <section className={`rounded-lg oak-card p-5 ${wide ? "xl:col-span-2" : ""}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-bold text-white">{title}</h2>
+        <h2 className="text-xl font-bold text-bone">{title}</h2>
         <div className="flex flex-wrap gap-2">
           <button className="secondary-button" onClick={copy}>
             Copy
@@ -1134,7 +1162,7 @@ function ExportBlock({
           </button>
         </div>
       </div>
-      <pre className="mt-4 max-h-[620px] overflow-auto whitespace-pre-wrap rounded-lg bg-coal p-4 text-sm leading-6 text-ash">
+      <pre className="mt-4 max-h-[620px] overflow-auto whitespace-pre-wrap rounded-lg bg-smoke p-4 text-sm leading-6 text-ash">
         {text}
       </pre>
     </section>
