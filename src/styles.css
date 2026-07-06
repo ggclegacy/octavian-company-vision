@@ -27,11 +27,13 @@ button:disabled {
   .hero-emblem {
     position: relative;
     display: grid;
-    width: min(76vw, 360px);
+    width: min(82vw, 382px);
     aspect-ratio: 1;
     place-items: center;
     border-radius: 9999px;
     isolation: isolate;
+    contain: layout paint;
+    will-change: transform, filter;
     animation: oak-breathe 5.8s ease-in-out infinite;
   }
 
@@ -45,23 +47,29 @@ button:disabled {
   }
 
   .hero-emblem::before {
-    padding: 2px;
+    padding: 3px;
     background:
       conic-gradient(
-        from 0deg,
-        rgba(214, 164, 58, 0.16),
-        rgba(27, 45, 36, 0.92),
-        rgba(214, 164, 58, 0.78),
-        rgba(122, 36, 24, 0.26),
-        rgba(27, 45, 36, 0.92),
-        rgba(214, 164, 58, 0.16)
+        from 18deg,
+        rgba(214, 164, 58, 0.08) 0deg,
+        rgba(27, 45, 36, 0.95) 42deg,
+        rgba(214, 164, 58, 0.92) 78deg,
+        rgba(240, 228, 208, 0.18) 94deg,
+        rgba(14, 13, 11, 0.14) 132deg,
+        rgba(27, 45, 36, 0.96) 188deg,
+        rgba(122, 36, 24, 0.22) 224deg,
+        rgba(214, 164, 58, 0.72) 288deg,
+        rgba(27, 45, 36, 0.95) 330deg,
+        rgba(214, 164, 58, 0.08) 360deg
       );
     mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     mask-composite: exclude;
     opacity: 0.95;
-    animation: oak-border-orbit 7.5s linear infinite;
+    filter: drop-shadow(0 0 22px rgba(27, 45, 36, 0.72));
+    will-change: transform;
+    animation: oak-border-orbit 6.8s linear infinite;
   }
 
   .hero-emblem::after {
@@ -78,29 +86,74 @@ button:disabled {
   .hero-emblem-core {
     position: relative;
     display: grid;
-    width: 82%;
+    width: 84%;
     aspect-ratio: 1;
     place-items: center;
     border-radius: inherit;
     border: 1px solid rgba(214, 164, 58, 0.22);
     background:
+      linear-gradient(90deg, transparent 49.5%, rgba(214, 164, 58, 0.08) 50%, transparent 50.5%),
+      linear-gradient(0deg, transparent 49.5%, rgba(214, 164, 58, 0.06) 50%, transparent 50.5%),
       radial-gradient(circle at 50% 45%, rgba(27, 45, 36, 0.48), transparent 58%),
       linear-gradient(145deg, rgba(14, 13, 11, 0.84), rgba(27, 45, 36, 0.52));
     box-shadow:
       0 0 42px rgba(27, 45, 36, 0.66),
       0 0 92px rgba(27, 45, 36, 0.34),
       inset 0 0 38px rgba(214, 164, 58, 0.07);
+    overflow: hidden;
+  }
+
+  .hero-emblem-core::before,
+  .hero-emblem-core::after {
+    content: "";
+    position: absolute;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .hero-emblem-core::before {
+    inset: 8%;
+    border: 1px solid rgba(214, 164, 58, 0.18);
+    background:
+      conic-gradient(
+        from 210deg,
+        transparent 0deg,
+        rgba(214, 164, 58, 0.26) 18deg,
+        transparent 38deg,
+        transparent 112deg,
+        rgba(27, 45, 36, 0.52) 132deg,
+        transparent 158deg,
+        transparent 236deg,
+        rgba(214, 164, 58, 0.24) 258deg,
+        transparent 284deg,
+        transparent 360deg
+      );
+    opacity: 0.78;
+    animation: oak-border-counter 11s linear infinite;
+  }
+
+  .hero-emblem-core::after {
+    inset: 17%;
+    border: 1px solid rgba(27, 45, 36, 0.78);
+    box-shadow:
+      0 0 24px rgba(27, 45, 36, 0.62),
+      inset 0 0 20px rgba(214, 164, 58, 0.06);
+    opacity: 0.72;
+    animation: oak-tech-ring 5.8s ease-in-out infinite;
   }
 
   .hero-emblem-logo {
-    width: min(58vw, 265px);
-    max-width: 84%;
+    position: relative;
+    z-index: 1;
+    width: min(69.6vw, 318px);
+    max-width: 96%;
     object-fit: contain;
     filter:
       drop-shadow(0 0 18px rgba(27, 45, 36, 0.92))
       drop-shadow(0 0 34px rgba(214, 164, 58, 0.18))
       drop-shadow(0 18px 34px rgba(0, 0, 0, 0.56));
     transform-origin: center;
+    will-change: transform, filter;
     animation: oak-logo-life 5.8s ease-in-out infinite;
   }
 
@@ -136,6 +189,24 @@ button:disabled {
 @keyframes oak-border-orbit {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes oak-border-counter {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes oak-tech-ring {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: scale(0.965);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.025);
   }
 }
 
@@ -185,6 +256,8 @@ button:disabled {
   .hero-emblem,
   .hero-emblem::before,
   .hero-emblem::after,
+  .hero-emblem-core::before,
+  .hero-emblem-core::after,
   .hero-emblem-logo {
     animation: none;
   }
