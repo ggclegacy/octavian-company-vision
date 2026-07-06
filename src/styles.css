@@ -24,6 +24,86 @@ button:disabled {
 }
 
 @layer components {
+  .hero-emblem {
+    position: relative;
+    display: grid;
+    width: min(76vw, 360px);
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 9999px;
+    isolation: isolate;
+    animation: oak-breathe 5.8s ease-in-out infinite;
+  }
+
+  .hero-emblem::before,
+  .hero-emblem::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .hero-emblem::before {
+    padding: 2px;
+    background:
+      conic-gradient(
+        from 0deg,
+        rgba(214, 164, 58, 0.16),
+        rgba(27, 45, 36, 0.92),
+        rgba(214, 164, 58, 0.78),
+        rgba(122, 36, 24, 0.26),
+        rgba(27, 45, 36, 0.92),
+        rgba(214, 164, 58, 0.16)
+      );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.95;
+    animation: oak-border-orbit 7.5s linear infinite;
+  }
+
+  .hero-emblem::after {
+    inset: 8%;
+    background:
+      radial-gradient(circle, rgba(27, 45, 36, 0.42), transparent 58%),
+      radial-gradient(circle, rgba(214, 164, 58, 0.08), transparent 66%);
+    filter: blur(20px);
+    opacity: 0.82;
+    animation: oak-halo-pulse 5.8s ease-in-out infinite;
+    z-index: -1;
+  }
+
+  .hero-emblem-core {
+    position: relative;
+    display: grid;
+    width: 82%;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: inherit;
+    border: 1px solid rgba(214, 164, 58, 0.22);
+    background:
+      radial-gradient(circle at 50% 45%, rgba(27, 45, 36, 0.48), transparent 58%),
+      linear-gradient(145deg, rgba(14, 13, 11, 0.84), rgba(27, 45, 36, 0.52));
+    box-shadow:
+      0 0 42px rgba(27, 45, 36, 0.66),
+      0 0 92px rgba(27, 45, 36, 0.34),
+      inset 0 0 38px rgba(214, 164, 58, 0.07);
+  }
+
+  .hero-emblem-logo {
+    width: min(58vw, 265px);
+    max-width: 84%;
+    object-fit: contain;
+    filter:
+      drop-shadow(0 0 18px rgba(27, 45, 36, 0.92))
+      drop-shadow(0 0 34px rgba(214, 164, 58, 0.18))
+      drop-shadow(0 18px 34px rgba(0, 0, 0, 0.56));
+    transform-origin: center;
+    animation: oak-logo-life 5.8s ease-in-out infinite;
+  }
+
   .primary-button {
     @apply inline-flex items-center justify-center rounded-md border border-gold bg-gradient-to-b from-[#E2B957] to-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[0.12em] text-coal shadow-ember transition hover:-translate-y-0.5 hover:from-[#EDC86D] hover:to-[#D6A43A] focus:outline-none focus:ring-4 focus:ring-gold/30;
   }
@@ -50,5 +130,62 @@ button:disabled {
 
   .oak-input {
     @apply rounded-lg border border-gold/20 bg-smoke p-4 text-bone outline-none ring-gold/25 placeholder:text-iron focus:border-gold focus:ring-4;
+  }
+}
+
+@keyframes oak-border-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes oak-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 22px rgba(27, 45, 36, 0.36));
+  }
+  50% {
+    transform: scale(1.025);
+    filter: drop-shadow(0 0 42px rgba(27, 45, 36, 0.68));
+  }
+}
+
+@keyframes oak-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes oak-logo-life {
+  0%,
+  100% {
+    transform: scale(0.985);
+    filter:
+      drop-shadow(0 0 14px rgba(27, 45, 36, 0.8))
+      drop-shadow(0 0 26px rgba(214, 164, 58, 0.12))
+      drop-shadow(0 18px 34px rgba(0, 0, 0, 0.56));
+  }
+  50% {
+    transform: scale(1.025);
+    filter:
+      drop-shadow(0 0 24px rgba(27, 45, 36, 1))
+      drop-shadow(0 0 42px rgba(214, 164, 58, 0.22))
+      drop-shadow(0 22px 42px rgba(0, 0, 0, 0.62));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-emblem,
+  .hero-emblem::before,
+  .hero-emblem::after,
+  .hero-emblem-logo {
+    animation: none;
   }
 }

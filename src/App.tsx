@@ -161,6 +161,16 @@ function Shell({
   );
 }
 
+function HeroLogoEmblem() {
+  return (
+    <div className="hero-emblem mx-auto mb-10">
+      <div className="hero-emblem-core">
+        <img className="hero-emblem-logo" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+      </div>
+    </div>
+  );
+}
+
 function StartPage(props: SessionProps) {
   const steps = [
     "Answer naturally",
@@ -173,11 +183,7 @@ function StartPage(props: SessionProps) {
   return (
     <Shell {...props}>
       <section className="flex flex-1 flex-col justify-center">
-        <img
-          className="mx-auto mb-10 w-[190px] max-w-[70vw] object-contain drop-shadow-[0_24px_45px_rgba(0,0,0,0.45)] sm:w-[260px] lg:w-[300px]"
-          src={oakfireLogoSrc}
-          alt="Oakfire by Octavian"
-        />
+        <HeroLogoEmblem />
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="max-w-3xl">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-gold">Exclusive private barbecue vision session</p>
