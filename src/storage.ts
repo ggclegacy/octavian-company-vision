@@ -303,10 +303,14 @@ export function useSession() {
   }, [touch]);
 
   const importSession = useCallback((value: unknown) => {
-    const imported = normalizeSession(value);
-    if (!imported.sessionId || !imported.createdAt || typeof imported.answers !== "object") {
+    if (!value || typeof value !== "object") {
       throw new Error("This does not look like a valid Octavian vision session backup.");
     }
+    const raw = value as Partial<SessionState>;
+    if (!raw.sessionId || !raw.createdAt || !raw.updatedAt || !raw.answers || typeof raw.answers !== "object") {
+      throw new Error("This does not look like a valid Octavian vision session backup.");
+    }
+    const imported = normalizeSession(value);
     setSession({ ...imported, updatedAt: now(), lastSavedAt: now() });
   }, []);
 

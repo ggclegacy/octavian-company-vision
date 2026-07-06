@@ -126,10 +126,10 @@ function Shell({
 
 function StartPage(props: SessionProps) {
   const steps = [
-    "Answer in your own words",
-    "Generate the vision draft",
-    "Review it together",
-    "Finalize the company vision",
+    "Answer naturally",
+    "Generate the draft",
+    "Review together",
+    "Finalize the vision",
     "Export the plan",
   ];
 
@@ -137,21 +137,20 @@ function StartPage(props: SessionProps) {
     <Shell {...props}>
       <section className="grid flex-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-gold">Guided BBQ brand session</p>
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-gold">Guided company vision session</p>
           <h1 className="text-4xl font-black leading-tight text-white sm:text-6xl">Octavian Company Vision Builder</h1>
           <p className="mt-5 max-w-2xl text-xl leading-8 text-bone">
-            A guided session to turn the food, the story, and the business vision into a real brand foundation.
+            A guided session to turn the food, the story, and the business vision into a real company blueprint.
           </p>
           <div className="mt-8 max-w-2xl space-y-5 text-lg leading-8 text-ash">
             <p>This is not a form to fill out alone.</p>
             <p>
-              This is a guided company vision session. Octavian will answer the questions in his own words, and the app
-              will organize those answers into a draft vision for the barbecue company.
+              Octavian answers in his own words. The app keeps those answers safe, organizes them into a draft, and
+              helps turn the conversation into a stronger direction for the barbecue company.
             </p>
             <p>
-              After the questions are answered, Neil and Octavian can review the vision together, add feedback, sharpen
-              the direction, and turn it into a clearer blueprint for the brand, website, catering direction, content
-              strategy, and future AI tools.
+              Neil and Octavian review the draft together, sharpen what matters, and leave with a plan they can copy,
+              export, and keep building from.
             </p>
           </div>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -166,7 +165,7 @@ function StartPage(props: SessionProps) {
         </div>
 
         <div className="rounded-lg border border-white/10 bg-soot/85 p-6 shadow-ember">
-          <h2 className="text-2xl font-black text-white">Session Flow</h2>
+          <h2 className="text-2xl font-black text-white">How the session works</h2>
           <ol className="mt-5 space-y-4">
             {steps.map((step, index) => (
               <li key={step} className="flex gap-4 rounded-md border border-white/10 bg-white/[0.03] p-4">
@@ -323,7 +322,10 @@ function SessionPage({
 
           <p className="text-sm font-semibold text-ash">Question {index + 1}</p>
           <h2 className="mt-2 text-2xl font-bold leading-snug text-white sm:text-4xl">{item.text}</h2>
-          <div className="mt-5 rounded-lg border border-gold/30 bg-gold/10 p-4">
+          <p className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-sm font-semibold text-bone">
+            Answer in your own words. The original answer stays saved.
+          </p>
+          <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
             <p className="text-sm font-semibold text-gold">Why this matters</p>
             <p className="mt-1 text-base leading-7 text-bone">{item.why}</p>
           </div>
@@ -375,6 +377,7 @@ function SessionPage({
                 }}
               />
               Needs follow-up
+              <span className="font-normal text-ash">Mark this when the answer is partial or worth coming back to.</span>
             </label>
           </div>
 
@@ -414,6 +417,9 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
   const previewSections = session.generatedVisionDraft.length ? session.generatedVisionDraft : generateFirstVisionDraft(session.answers);
   const summary = completenessSummary(previewSections, session.answers);
   const completeCategories = categoriesComplete(session.answers);
+  const categoriesWithAnswers = categories.filter((category) =>
+    category.questions.some((question) => session.answers[question.id]?.originalAnswer.trim()),
+  );
 
   const handleGenerate = () => {
     if (session.generatedVisionDraft.length) {
@@ -443,8 +449,19 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Generate draft</p>
           <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Ready for the first vision draft</h1>
           <p className="mt-5 text-lg leading-8 text-ash">
-            This first draft is not final. It is a starting point for Neil and Octavian to review together.
+            This draft is not final. It is the first blueprint we'll review together.
           </p>
+          {!answeredCount && (
+            <div className="mt-5 rounded-lg border border-white/10 bg-coal p-4">
+              <p className="font-semibold text-bone">No answers are saved yet.</p>
+              <p className="mt-2 text-sm leading-6 text-ash">
+                Start with the answer session, save a few responses, then come back here to build the first draft.
+              </p>
+              <Link className="secondary-button mt-4" to="/session">
+                Start Answer Session
+              </Link>
+            </div>
+          )}
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <Metric label="Original answers" value={`${answeredCount}/${flatQuestions.length}`} />
             <Metric label="Skipped" value={`${skippedCount}`} />
@@ -457,21 +474,35 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
             <Metric label="Needs follow-up" value={`${summary["Needs follow-up"]}`} />
             <Metric label="Missing key details" value={`${summary["Missing key details"]}`} />
           </div>
-          <button className="primary-button mt-8" onClick={handleGenerate}>
+          <button className="primary-button mt-8" onClick={handleGenerate} disabled={!answeredCount}>
             Generate / Update Vision Draft
           </button>
         </section>
 
         <section className="rounded-lg border border-white/10 bg-soot/80 p-6">
-          <h2 className="text-2xl font-bold text-white">Missing / weak areas</h2>
+          <h2 className="text-2xl font-bold text-white">Session readiness</h2>
+          <div className="mt-4 rounded-lg border border-white/10 bg-coal p-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gold">Categories with answers</h3>
+            <p className="mt-2 text-sm leading-6 text-ash">
+              {categoriesWithAnswers.length
+                ? categoriesWithAnswers.map((category) => category.name).join(", ")
+                : "No categories have saved answers yet."}
+            </p>
+          </div>
+          <h3 className="mt-5 text-xl font-bold text-white">Skipped / needs-follow-up / missing areas</h3>
           <div className="mt-4 max-h-[520px] overflow-auto space-y-3">
             {missing.length ? (
-              missing.map((question) => (
-                <div key={question.id} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold">{question.category.name}</p>
-                  <p className="mt-1 text-sm leading-6 text-ash">{question.text}</p>
-                </div>
-              ))
+              missing.map((question) => {
+                const answer = session.answers[question.id];
+                const status = answer?.skippedAt ? "Skipped for now" : "Needs follow-up";
+                return (
+                  <div key={question.id} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold">{question.category.name}</p>
+                    <p className="mt-1 text-sm leading-6 text-ash">{question.text}</p>
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-bone">{status}</p>
+                  </div>
+                );
+              })
             ) : (
               <p className="text-ash">All guided questions have original answers saved.</p>
             )}
@@ -509,6 +540,9 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
             Use this space to sharpen the direction together. Add what feels right, what feels wrong, what needs to be
             stronger, or what should be changed.
           </p>
+          <p className="mt-2 max-w-3xl text-sm font-semibold text-bone">
+            This is feedback on the company vision, not an edit to Octavian's original answers.
+          </p>
           <p className="mt-3 text-sm font-semibold text-bone">
             Completeness: {summary["Strong foundation"]} strong foundation, {summary["Needs follow-up"]} needs
             follow-up, {summary["Missing key details"]} missing key details.
@@ -523,6 +557,18 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
           </button>
         </div>
       </div>
+
+      {!session.generatedVisionDraft.length && (
+        <div className="mb-6 rounded-lg border border-gold/30 bg-gold/10 p-5">
+          <h2 className="text-xl font-black text-white">No vision draft has been generated yet.</h2>
+          <p className="mt-2 text-sm leading-6 text-bone">
+            Generate the first draft, then come back here to review the company vision together.
+          </p>
+          <Link className="secondary-button mt-4" to="/generate">
+            Go to Generate
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-5">
         {sections.map((section) => (
@@ -606,7 +652,7 @@ function ReviewSection({
         />
         <FeedbackField
           id={`stronger-${section.id}`}
-          label="What should be stronger or clearer?"
+          label="What should be stronger?"
           value={feedback.makeStronger}
           onChange={(makeStronger) => setFeedback((current) => ({ ...current, makeStronger }))}
         />
@@ -634,7 +680,7 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
       />
       <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Draft / Session-Based Vision</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Session-Based Draft</p>
           <h1 className="mt-2 text-3xl font-black text-white sm:text-5xl">Octavian BBQ Company Vision</h1>
           <p className="mt-3 text-ash">
             {answeredCount} of {flatQuestions.length} original answers saved. Last saved:{" "}
@@ -657,19 +703,32 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
       <div className="mb-6 grid gap-3 md:grid-cols-5">
         <Metric label="Questions answered" value={`${answeredCount}/${flatQuestions.length}`} />
         <Metric label="Skipped" value={`${skippedCount}`} />
-        <Metric label="Needs follow-up" value={`${followUpCount}`} />
+        <Metric label="Follow-up flags" value={`${followUpCount}`} />
         <Metric label="Categories complete" value={`${completeCategories}/${categories.length}`} />
         <Metric label="Strong foundation" value={`${summary["Strong foundation"]}`} />
-        <Metric label="Needs follow-up" value={`${summary["Needs follow-up"]}`} />
-        <Metric label="Missing key details" value={`${summary["Missing key details"]}`} />
+        <Metric label="Partial sections" value={`${summary["Needs follow-up"]}`} />
+        <Metric label="Needs follow-up sections" value={`${summary["Missing key details"]}`} />
       </div>
+
+      <BeforeLeavesChecklist />
+
+      {!answeredCount && (
+        <div className="mb-6 rounded-lg border border-white/10 bg-soot/85 p-5">
+          <h2 className="text-xl font-black text-white">No saved answers yet.</h2>
+          <p className="mt-2 text-sm leading-6 text-ash">
+            Start the answer session first. Once Octavian saves answers, this page becomes the company vision hub.
+          </p>
+          <Link className="secondary-button mt-4" to="/session">
+            Start Answer Session
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-4">
         {sections.map((section) => (
           <VisionSectionCard key={section.id} section={section} session={session} />
         ))}
       </div>
-      <BeforeLeavesChecklist />
     </Shell>
   );
 }
@@ -688,8 +747,12 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
   const [copied, setCopied] = useState("");
 
   const copy = async (label: string, text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(label);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(`${label} copied.`);
+    } catch {
+      setCopied(`Could not copy ${label}. Select the text below and copy it manually.`);
+    }
   };
 
   const download = (filename: string, content: string, type = "text/plain") => {
@@ -721,7 +784,7 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
           Completeness: {summary["Strong foundation"]} strong foundation, {summary["Needs follow-up"]} needs follow-up,{" "}
           {summary["Missing key details"]} missing key details.
         </p>
-        {copied && <p className="mt-3 text-sm font-semibold text-gold">{copied} copied.</p>}
+        {copied && <p className="mt-3 text-sm font-semibold text-gold">{copied}</p>}
       </div>
 
       <div className="mb-6 rounded-lg border border-gold/30 bg-gold/10 p-5">
@@ -741,6 +804,18 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
       </div>
 
       <BeforeLeavesChecklist />
+
+      {!answeredCount && (
+        <div className="mb-6 rounded-lg border border-white/10 bg-soot/85 p-5">
+          <h2 className="text-xl font-black text-white">Nothing to export yet.</h2>
+          <p className="mt-2 text-sm leading-6 text-ash">
+            Save at least one answer first, then come back here for copy-ready outputs and backups.
+          </p>
+          <Link className="secondary-button mt-4" to="/session">
+            Start Answer Session
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-2">
         <ExportBlock title="Original Answers" text={original} copy={() => copy("Original answers", original)} download={() => download("octavian-original-answers.txt", original)} />
@@ -1022,7 +1097,8 @@ function VisionSectionCard({ section, session }: { section: VisionSection; sessi
           <ul className="mt-3 space-y-2 text-sm leading-6 text-ash">
             {sources.map((source) => (
               <li key={source.questionId}>
-                <span className="font-semibold text-bone">{source.questionText}</span> {source.originalAnswer}
+                <span className="font-semibold text-bone">{source.questionText}</span>{" "}
+                {source.originalAnswer || (source.skippedAt ? "Skipped for now" : "Needs follow-up")}
               </li>
             ))}
           </ul>
