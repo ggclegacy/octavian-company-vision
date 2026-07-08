@@ -1,5 +1,5 @@
 import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { categories, flatPersonalOsQuestions, flatQuestions, personalOsCategories, type Category } from "./data";
 import { formatLastSaved, type ReviewFeedback, SessionState, useSession } from "./storage";
 import {
@@ -33,28 +33,6 @@ import {
 } from "./vision";
 
 const oakfireLogoSrc = "/oakfirelogo.png";
-
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  }
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognition;
-type SpeechRecognition = EventTarget & {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((event: { error: string }) => void) | null;
-};
-type SpeechRecognitionEvent = {
-  results: ArrayLike<ArrayLike<{ transcript: string }>>;
-};
 
 type SessionProps = ReturnType<typeof useSession>;
 type PlanningOutputs = ReturnType<typeof buildPlanningOutputs>;
@@ -278,7 +256,7 @@ function App() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(27,45,36,0.72),transparent_34%),radial-gradient(circle_at_50%_105%,rgba(122,36,24,0.32),transparent_32%),radial-gradient(circle_at_8%_8%,rgba(214,164,58,0.1),transparent_24%),linear-gradient(180deg,#0E0D0B_0%,#12110E_42%,#0E0D0B_100%)]" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.44)_78%),linear-gradient(90deg,rgba(240,228,208,0.025)_1px,transparent_1px),linear-gradient(180deg,rgba(240,228,208,0.018)_1px,transparent_1px)] bg-[length:auto,72px_72px,72px_72px]" />
       <Routes>
-        <Route path="/" element={<StartPage {...sessionApi} />} />
+        <Route path="/" element={<StartPage />} />
         <Route path="/session" element={<SessionPage {...sessionApi} />} />
         <Route path="/review-answers" element={<ReviewAnswersPage {...sessionApi} />} />
         <Route path="/complete" element={<CompletePage {...sessionApi} />} />
@@ -304,12 +282,13 @@ function App() {
 
 function PublicShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-5 sm:px-8 lg:px-10">
-      <header className="mb-6 flex items-center justify-center sm:justify-start">
-        <Link to="/" className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.2em] text-gold sm:text-sm">
-          <img className="h-12 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
-          <span>Oakfire by Octavian</span>
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-4 sm:px-8 lg:px-10">
+      <header className="mb-5 flex items-center justify-between gap-4">
+        <Link to="/" className="flex min-w-0 items-center gap-3 text-xs font-black uppercase tracking-[0.16em] text-gold sm:text-sm">
+          <img className="h-10 w-auto shrink-0 object-contain sm:h-11" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <span className="truncate">Oakfire by Octavian</span>
         </Link>
+        <p className="shrink-0 text-right text-xs font-bold text-ash">Draft autosaves</p>
       </header>
       {children}
     </main>
@@ -405,29 +384,18 @@ function HeroLogoEmblem() {
   );
 }
 
-function StartPage(props: SessionProps) {
-  const guidance = [
-    "Be honest.",
-    "Skip anything you are unsure about.",
-    "Use voice if it helps.",
-    "Give examples when you can.",
-    "Don't worry about sounding polished.",
-  ];
-
+function StartPage() {
   return (
     <PublicShell>
-      <section className="relative -mx-5 -mt-5 overflow-hidden px-5 pb-12 pt-8 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+      <section className="relative -mx-4 -mt-4 overflow-hidden px-4 pb-10 pt-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(214,164,58,0.12),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(122,36,24,0.35),transparent_30%),radial-gradient(circle_at_14%_26%,rgba(27,45,36,0.72),transparent_34%),linear-gradient(180deg,rgba(14,13,11,0.38)_0%,rgba(14,13,11,0.94)_72%)]" />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 py-8 lg:min-h-[74vh] lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mx-auto grid max-w-5xl items-center gap-8 py-4 lg:min-h-[72vh] lg:grid-cols-[0.95fr_1.05fr]">
           <div className="order-2 lg:order-1">
-            <p className="mb-4 inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-black uppercase tracking-[0.2em] text-gold">
-              Private Vision Intake
+            <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-gold">
+              Private Intake for Octavian
             </p>
-            <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl lg:text-7xl">Oakfire Vision Intake & Planning</h1>
-            <p className="mt-5 max-w-2xl text-xl leading-8 text-bone">
-              A private intake built for Oakfire by Octavian.
-            </p>
-            <div className="mt-8 max-w-2xl rounded-lg border border-gold/25 bg-coal/60 p-5 shadow-oak backdrop-blur">
+            <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl">Oakfire Vision Intake & Planning</h1>
+            <div className="mt-6 max-w-2xl rounded-lg border border-gold/25 bg-coal/60 p-5 shadow-oak backdrop-blur">
               <div className="mb-4 gold-divider" />
               <div className="space-y-4 text-base leading-7 text-ash sm:text-lg sm:leading-8">
                 <p className="font-bold text-bone">Octavian,</p>
@@ -435,16 +403,6 @@ function StartPage(props: SessionProps) {
                 <p>
                   Now I want to take what I've learned from building my brand, websites, systems, AI tools, and business
                   plans - and use it to help you shape Oakfire into something real.
-                </p>
-                <p className="font-bold text-bone">This intake has two parts.</p>
-                <p>
-                  Part 1 is about Oakfire: the food, the story, the brand, catering, content, website, and the Oakfire x
-                  Legacy Sanctum opportunity.
-                </p>
-                <p>
-                  Part 2 is about Eighth Flame: the future personal OS I may build for you, guided by Orion. That app
-                  can support your business, lifestyle, goals, finances, health, content, cannabis strain notes, real
-                  estate work if relevant, and the tools that help you stay organized.
                 </p>
                 <p>
                   No need to overthink it. Just answer honestly in your own words. The better your answers are, the
@@ -457,7 +415,7 @@ function StartPage(props: SessionProps) {
                 Start Intake
               </Link>
               <p className="max-w-md text-sm leading-6 text-ash">
-                Your answers save on this device while you work. When you submit, Neil will be able to review them.
+                Answer one question at a time. Skip anything you are unsure about.
               </p>
             </div>
           </div>
@@ -467,59 +425,20 @@ function StartPage(props: SessionProps) {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-10 py-10">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">The path</p>
-          <h2 className="mt-2 text-3xl font-black text-bone sm:text-5xl">The Two-Part Journey</h2>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            <div className="premium-card p-6">
-              <div className="flex items-center gap-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-gold/45 bg-gold/15 text-xl font-black text-gold">1</span>
-                <div>
-                  <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 1</p>
-                  <h3 className="mt-1 text-2xl font-black text-bone">Oakfire Vision Intake</h3>
-                </div>
-              </div>
-              <p className="mt-3 text-base leading-7 text-ash">
-                Story, food, name direction, brand identity, catering, website, content, business path, and Oakfire x
-                Legacy Sanctum.
-              </p>
-            </div>
-            <div className="premium-card p-6">
-              <div className="flex items-center gap-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-gold/45 bg-gold/15 text-xl font-black text-gold">2</span>
-                <div>
-                  <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 2</p>
-                  <h3 className="mt-1 text-2xl font-black text-bone">Eighth Flame Personal OS Intake</h3>
-                </div>
-              </div>
-              <p className="mt-3 text-base leading-7 text-ash">
-                The future app built around you - business, personal systems, finances, health, real estate support if
-                relevant, strain library, and Orion.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="premium-card p-6">
-          <h2 className="text-3xl font-black text-bone">How to Answer</h2>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-ash">
-            Speak naturally or type it out. This is not about perfect wording. It is about capturing the truth of what
-            you want to build. Your original answers stay saved, and Neil uses them to shape the planning brief.
+      <section className="mx-auto grid w-full max-w-5xl gap-4 pb-10 md:grid-cols-2">
+        <div className="premium-card p-5">
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 1</p>
+          <h2 className="mt-2 text-2xl font-black text-bone">Oakfire Vision</h2>
+          <p className="mt-3 text-base leading-7 text-ash">
+            Story, food, brand, website, catering, content, business direction, and Oakfire x Legacy Sanctum.
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {guidance.map((item) => (
-              <p key={item} className="rounded-md border border-gold/15 bg-coal/35 p-3 text-sm font-bold text-bone">
-                {item}
-              </p>
-            ))}
-          </div>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link className="primary-button px-7 py-4" to="/session">
-              Start Intake
-            </Link>
-            <p className="text-sm leading-6 text-ash">Your draft saves as you go. Submit when you are finished.</p>
-          </div>
+        </div>
+        <div className="premium-card p-5">
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 2</p>
+          <h2 className="mt-2 text-2xl font-black text-bone">Eighth Flame OS</h2>
+          <p className="mt-3 text-base leading-7 text-ash">
+            The future personal OS for business, lifestyle, goals, finances, health, content, strain notes, real estate, and Orion.
+          </p>
         </div>
       </section>
     </PublicShell>
@@ -529,16 +448,9 @@ function StartPage(props: SessionProps) {
 function SessionPage({
   session,
   saveOriginalAnswer,
-  organizeAnswer,
   setCurrentQuestionIndex,
-  generateDraft,
   skipQuestion,
   setFollowUpNeeded,
-  clearSession,
-  answeredCount,
-  skippedCount,
-  followUpCount,
-  organizedCount,
 }: SessionProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -546,21 +458,20 @@ function SessionPage({
   const [activeIntake, setActiveIntake] = useState<"oakfire" | "eighth-flame">(initialPart);
   const [showPartIntro, setShowPartIntro] = useState(() => !searchParams.get("q"));
   const activeQuestions = activeIntake === "oakfire" ? flatQuestions : flatPersonalOsQuestions;
-  const activeCategories = activeIntake === "oakfire" ? categories : personalOsCategories;
-  const activeLabel = activeIntake === "oakfire" ? "Part 1: Oakfire Vision Intake" : "Part 2: Eighth Flame Personal OS Intake";
+  const activePartNumber = activeIntake === "oakfire" ? 1 : 2;
   const activeIntro =
     activeIntake === "oakfire"
       ? {
           eyebrow: "Part 1",
-          title: "Part 1: Oakfire Vision Intake",
-          body: "This section is about the barbecue company: the story, food, brand, Legacy Sanctum opportunity, website, catering, content, and the direction Oakfire could grow.",
-          button: "Begin Oakfire Vision",
+          title: "Part 1: Oakfire Vision",
+          body: "This section is about the barbecue company - the story, food, brand, Legacy Sanctum opportunity, website, catering, content, and where Oakfire could go.",
+          button: "Begin Part 1",
         }
       : {
           eyebrow: "Part 2",
-          title: "Part 2: Eighth Flame Personal OS Intake",
-          body: "This section is about the future personal OS Neil may build for you. Eighth Flame is bigger than Oakfire and can support business, lifestyle, finances, health, content, cannabis strain notes, real estate work if relevant, and Orion.",
-          button: "Begin Eighth Flame Intake",
+          title: "Part 2: Eighth Flame OS",
+          body: "This section is about the future personal OS Neil may build for you - business, lifestyle, goals, finances, health, content, cannabis strain notes, real estate work if relevant, and Orion.",
+          button: "Begin Part 2",
         };
   const total = activeQuestions.length;
   const requestedIndex = Number(searchParams.get("q"));
@@ -571,23 +482,14 @@ function SessionPage({
   const answer = session.answers[item.id];
   const [draft, setDraft] = useState(answer?.originalAnswer ?? "");
   const [followUpChecked, setFollowUpChecked] = useState(Boolean(answer?.followUpNeeded));
-  const [voiceStatus, setVoiceStatus] = useState("Voice ready.");
-  const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const SpeechRecognitionApi = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
   const progress = Math.round(((index + 1) / total) * 100);
 
   useEffect(() => {
     setDraft(session.answers[item.id]?.originalAnswer ?? "");
     setFollowUpChecked(Boolean(session.answers[item.id]?.followUpNeeded));
-    setVoiceStatus("Voice ready.");
   }, [item.id, session.answers]);
 
   const save = () => saveOriginalAnswer(item.id, draft);
-  const organize = () => {
-    saveOriginalAnswer(item.id, draft);
-    organizeAnswer(item.id, draft);
-  };
   const switchIntake = (nextIntake: "oakfire" | "eighth-flame", intro = true) => {
     setActiveIntake(nextIntake);
     setShowPartIntro(intro);
@@ -610,7 +512,22 @@ function SessionPage({
     if (activeIntake === "oakfire") switchIntake("eighth-flame", true);
     else navigate("/review-answers");
   };
+  const backFlow = () => {
+    if (index > 0) {
+      goTo(index - 1);
+      return;
+    }
+    if (activeIntake === "eighth-flame") {
+      save();
+      setActiveIntake("oakfire");
+      setShowPartIntro(false);
+      const previousIndex = flatQuestions.length - 1;
+      setCurrentQuestionIndex(previousIndex);
+      setSearchParams({ part: "oakfire", q: String(previousIndex) });
+    }
+  };
   const skip = () => {
+    save();
     skipQuestion(item.id);
     if (index < total - 1) {
       const nextIndex = Math.max(0, Math.min(total - 1, index + 1));
@@ -623,243 +540,105 @@ function SessionPage({
     }
   };
 
-  const startRecording = () => {
-    if (!SpeechRecognitionApi) return;
-    const recognition = new SpeechRecognitionApi();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((result) => result[0]?.transcript ?? "")
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-      if (transcript) setDraft((current) => `${current} ${transcript}`.trim());
-    };
-    recognition.onend = () => {
-      setIsRecording(false);
-      setVoiceStatus("Recording stopped. Review your answer before saving.");
-    };
-    recognition.onerror = (event) => {
-      setIsRecording(false);
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        setVoiceStatus("Microphone permission was blocked.");
-      } else if (event.error === "no-speech") {
-        setVoiceStatus("No speech detected. Try again or type the answer.");
-      } else {
-        setVoiceStatus("Voice capture stopped. You can try again or type the answer.");
-      }
-    };
-    try {
-      recognition.start();
-      recognitionRef.current = recognition;
-      setIsRecording(true);
-      setVoiceStatus("Listening... speak naturally.");
-    } catch {
-      setVoiceStatus("Voice capture stopped. You can try again or type the answer.");
-    }
-  };
-
-  const stopRecording = () => {
-    recognitionRef.current?.stop();
-    setIsRecording(false);
-    setVoiceStatus("Recording stopped. Review your answer before saving.");
-  };
-
   return (
     <PublicShell>
-      <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="rounded-lg oak-card p-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Intake Progress</p>
-          <div className="mt-4 grid gap-2">
+      <section className="mx-auto w-full max-w-3xl">
+        {showPartIntro ? (
+          <article className="premium-card p-7 text-center shadow-ember sm:p-10">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{activeIntro.eyebrow}</p>
+            <h1 className="mt-3 text-3xl font-black leading-tight text-bone sm:text-5xl">{activeIntro.title}</h1>
+            <p className="mt-5 text-lg leading-8 text-ash">{activeIntro.body}</p>
             <button
-              className={activeIntake === "oakfire" ? "primary-button w-full" : "secondary-button w-full"}
+              className="primary-button mt-8 w-full sm:w-auto"
               onClick={() => {
-                switchIntake("oakfire");
+                setShowPartIntro(false);
+                setSearchParams({ part: activeIntake, q: String(index) });
               }}
             >
-              Part 1: Oakfire
+              {activeIntro.button}
             </button>
-            <button
-              className={activeIntake === "eighth-flame" ? "primary-button w-full" : "secondary-button w-full"}
-              onClick={() => {
-                switchIntake("eighth-flame");
-              }}
-            >
-              Part 2: Eighth Flame
-            </button>
-          </div>
-          <div className="mt-4 h-3 rounded-full bg-white/10" aria-label={`${progress}% complete`}>
-            <div className="h-3 rounded-full bg-gradient-to-r from-gold to-[#E8C56D]" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="mt-3 text-sm leading-6 text-ash">
-            {activeLabel}. Question {index + 1} of {total}. {answeredInQuestions(activeQuestions.map((question) => question.id), session)} answered.{" "}
-            {skippedInQuestions(activeQuestions.map((question) => question.id), session)} skipped.{" "}
-            {followUpInQuestions(activeQuestions.map((question) => question.id), session)} needs follow-up.
-          </p>
-          <Link className="secondary-button mt-5 w-full" to="/review-answers" onClick={save}>
-            Review Answers
-          </Link>
-          <div className="mt-6 space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Category overview</p>
-            {activeCategories.map((category) => {
-              const progress = categoryProgress(category, session);
-              return (
-                <button
-                  key={category.id}
-                  className={`w-full rounded-md border px-3 py-3 text-left text-sm ${
-                    category.id === item.category.id
-                      ? "border-gold bg-gold/15 text-bone"
-                      : "border-gold/15 bg-coal/35 text-ash hover:border-gold/45 hover:text-bone"
-                  }`}
-                  onClick={() => {
-                    const categoryIndex = activeQuestions.findIndex((question) => question.category.id === category.id);
-                    goTo(categoryIndex);
-                  }}
-                >
-                  <span className="block font-bold">{category.name}</span>
-                  <span className="mt-1 block text-xs">
-                    {progress.status} - {progress.answered}/{progress.total} answered
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-
-        <article className="rounded-lg oak-card p-5 shadow-ember sm:p-8">
-          {showPartIntro ? (
-            <div className="grid min-h-[520px] place-items-center">
-              <div className="premium-card max-w-3xl p-7 text-center sm:p-10">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{activeIntro.eyebrow}</p>
-                <h2 className="mt-3 text-3xl font-black leading-tight text-bone sm:text-5xl">{activeIntro.title}</h2>
-                <p className="mt-5 text-lg leading-8 text-ash">{activeIntro.body}</p>
-                <p className="mt-5 rounded-lg border border-gold/15 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
-                  Answer in your own words. You can leave blanks, skip for now, or mark anything that needs follow-up.
-                </p>
-                <button
-                  className="primary-button mt-7"
-                  onClick={() => {
-                    setShowPartIntro(false);
-                    setSearchParams({ part: activeIntake, q: String(index) });
-                  }}
-                >
-                  {activeIntro.button}
-                </button>
+          </article>
+        ) : (
+          <article className="oak-card p-5 shadow-ember sm:p-8">
+            <div className="mb-6">
+              <p className="text-sm font-bold text-ash">
+                Part {activePartNumber} of 2 &bull; Question {index + 1} of {total}
+              </p>
+              <div className="mt-3 h-2 rounded-full bg-white/10" aria-label={`${progress}% complete`}>
+                <div className="h-2 rounded-full bg-gradient-to-r from-gold to-[#E8C56D]" style={{ width: `${progress}%` }} />
               </div>
             </div>
-          ) : (
-            <>
-          <div className={`mb-6 rounded-lg border p-5 ${item.category.id === "sanctum" ? "vision-opportunity" : "border-gold/15 bg-coal/35"}`}>
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-gold">
-                  {item.category.id === "sanctum" ? "Partnership Opportunity" : activeLabel}
-                </p>
-                <h2 className="text-2xl font-black text-bone">{item.category.name}</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-ash">{item.category.purpose}</p>
-              </div>
-              <span className="status-pill">
-                {index + 1}/{total}
-              </span>
-            </div>
-            <div className="mt-4 h-2 rounded-full bg-white/10" aria-label={`${progress}% complete`}>
-              <div className="h-2 rounded-full bg-gradient-to-r from-gold to-[#E8C56D]" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
 
-          {item.category.id === "sanctum" && <SanctumTeachingCards />}
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{item.category.name}</p>
+            <p className="mt-3 text-sm font-semibold text-ash">Question {index + 1}</p>
+            <h1 className="mt-2 text-2xl font-black leading-snug text-bone sm:text-4xl">{item.text}</h1>
 
-          <p className="text-sm font-semibold text-ash">Question {index + 1}</p>
-          <h2 className="mt-2 text-2xl font-bold leading-snug text-bone sm:text-4xl">{item.text}</h2>
-          <p className="mt-4 rounded-lg border border-gold/15 bg-coal/35 p-3 text-sm font-semibold text-bone">
-            Answer naturally. This is about capturing the truth first. Your original answer stays saved.
-          </p>
-          <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-4">
-            <p className="text-sm font-semibold text-gold">Why this matters</p>
-            <p className="mt-1 text-base leading-7 text-bone">{item.why}</p>
-          </div>
-
-          <div className="mt-6">
-            {SpeechRecognitionApi ? (
-              <div className="mb-3 flex flex-wrap gap-3">
-                <button className="secondary-button" onClick={startRecording} disabled={isRecording}>
-                  Start Recording
-                </button>
-                <button className="secondary-button" onClick={stopRecording} disabled={!isRecording}>
-                  Stop Recording
-                </button>
-                <span className="self-center text-sm font-semibold text-ash">{voiceStatus}</span>
-              </div>
-            ) : (
-              <p className="mb-3 rounded-lg border border-gold/15 bg-smoke/70 p-3 text-sm text-ash">
-                Voice input is not supported in this browser. You can still type the answer.
+            {item.category.id === "sanctum" && (
+              <p className="mt-4 rounded-lg border border-gold/25 bg-gold/10 p-4 text-sm font-semibold leading-6 text-bone">
+                Oakfire x Legacy Sanctum is the food, hospitality, and community opportunity inside Neil's future space.
               </p>
             )}
-            <p className="mb-3 text-sm leading-6 text-ash">
-              Voice works best in Chrome/Safari with microphone access allowed. If it does not work, type the answer
-              instead.
-            </p>
-            <label className="text-sm font-semibold text-bone" htmlFor="original-answer">
-              Your answer
-            </label>
-            <textarea
-              id="original-answer"
-              className="answer-surface mt-2 min-h-[18rem] w-full p-4 text-lg leading-8 text-bone outline-none placeholder:text-iron"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Octavian's answer goes here, in his own words..."
-            />
-            <label className="mt-4 flex items-center gap-3 rounded-lg border border-gold/15 bg-coal/35 p-4 text-sm font-semibold text-bone">
-              <input
-                className="h-5 w-5 accent-[#D6A43A]"
-                type="checkbox"
-                checked={followUpChecked}
-                onChange={(event) => {
-                  setFollowUpChecked(event.target.checked);
-                  setFollowUpNeeded(item.id, event.target.checked);
-                }}
-              />
-              Needs follow-up
-              <span className="font-normal text-ash">Mark this when the answer is partial or worth coming back to.</span>
-            </label>
-          </div>
 
-          <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button className="primary-button" onClick={save}>
-                Save Answer
-              </button>
-              <button className="quiet-button" onClick={skip}>
-                Skip for Now
-              </button>
+            <div className="mt-5 rounded-lg border border-gold/30 bg-gold/10 p-4">
+              <p className="text-sm font-black uppercase tracking-[0.12em] text-gold">Why this matters</p>
+              <p className="mt-2 text-base leading-7 text-bone">{item.why}</p>
             </div>
-            <div className="flex gap-3">
-              <button className="secondary-button" onClick={() => goTo(index - 1)} disabled={index === 0}>
+
+            <div className="mt-6">
+              <label className="text-sm font-semibold text-bone" htmlFor="original-answer">
+                Your answer
+              </label>
+              <textarea
+                id="original-answer"
+                className="answer-surface mt-2 min-h-[18rem] w-full p-4 text-lg leading-8 text-bone outline-none placeholder:text-iron"
+                value={draft}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDraft(value);
+                  saveOriginalAnswer(item.id, value);
+                }}
+                placeholder="Answer in your own words..."
+              />
+              <p className="mt-2 text-sm font-semibold text-ash">Draft autosaves on this device.</p>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <button className="ghost-button px-3 py-2 text-xs" onClick={skip}>
+                  Skip for now
+                </button>
+                <button
+                  className={followUpChecked ? "quiet-button px-3 py-2 text-xs" : "ghost-button px-3 py-2 text-xs"}
+                  onClick={() => {
+                    const next = !followUpChecked;
+                    setFollowUpChecked(next);
+                    setFollowUpNeeded(item.id, next);
+                  }}
+                >
+                  {followUpChecked ? "Needs follow-up marked" : "Needs follow-up"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
+              <button className="secondary-button w-full" onClick={backFlow} disabled={index === 0 && activeIntake === "oakfire"}>
                 Back
               </button>
-              <button className="secondary-button" onClick={continueFlow}>
-                {index === total - 1 ? (activeIntake === "oakfire" ? "Start Part 2" : "Review Answers") : "Continue"}
+              <button className="primary-button w-full" onClick={continueFlow}>
+                Save & Continue
               </button>
             </div>
-          </div>
-          </>
-          )}
-        </article>
+          </article>
+        )}
       </section>
     </PublicShell>
   );
 }
 
-function ReviewAnswersPage({ session, clearSession, completeIntake }: SessionProps) {
+function ReviewAnswersPage({ session, completeIntake }: SessionProps) {
   const navigate = useNavigate();
   const [submitMessage, setSubmitMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const oakfireSkipped = skippedInQuestions(flatQuestions.map((question) => question.id), session);
-  const personalSkipped = skippedInQuestions(flatPersonalOsQuestions.map((question) => question.id), session);
-  const oakfireFollowUp = followUpInQuestions(flatQuestions.map((question) => question.id), session);
-  const personalFollowUp = followUpInQuestions(flatPersonalOsQuestions.map((question) => question.id), session);
 
   const submit = async () => {
     setIsSubmitting(true);
@@ -895,31 +674,24 @@ function ReviewAnswersPage({ session, clearSession, completeIntake }: SessionPro
   return (
     <PublicShell>
       <section className="mb-7 rounded-lg oak-card p-6 shadow-ember">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Review answers</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Review your answers before finishing.</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Review</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Review Your Answers</h1>
         <p className="mt-3 max-w-3xl text-ash">
-          You can leave blanks if you are not sure yet. Your answers are saved on this device, and you can come back to
-          edit anything before or after submitting.
+          You can leave blanks if you're unsure. Neil can follow up later.
         </p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-4">
-          <Metric label="Oakfire answered" value={`${answeredInQuestions(flatQuestions.map((question) => question.id), session)}/${flatQuestions.length}`} />
-          <Metric label="Eighth Flame answered" value={`${answeredInQuestions(flatPersonalOsQuestions.map((question) => question.id), session)}/${flatPersonalOsQuestions.length}`} />
-          <Metric label="Skipped" value={`${oakfireSkipped + personalSkipped}`} />
-          <Metric label="Needs follow-up" value={`${oakfireFollowUp + personalFollowUp}`} />
-        </div>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link className="secondary-button" to="/session">
             Continue Intake
           </Link>
           <button className="primary-button" onClick={submit} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit"}
+            {isSubmitting ? "Submitting..." : "Submit Intake"}
           </button>
         </div>
         {submitMessage && <p className="mt-4 rounded-lg border border-gold/20 bg-coal/35 p-3 text-sm font-semibold text-bone">{submitMessage}</p>}
       </section>
 
-      <AnswerReviewGroup title="Part 1: Oakfire Answers" part="oakfire" categoriesToShow={categories} session={session} />
-      <AnswerReviewGroup title="Part 2: Eighth Flame Answers" part="eighth-flame" categoriesToShow={personalOsCategories} session={session} />
+      <AnswerReviewGroup title="Oakfire Vision" part="oakfire" categoriesToShow={categories} session={session} />
+      <AnswerReviewGroup title="Eighth Flame OS" part="eighth-flame" categoriesToShow={personalOsCategories} session={session} />
     </PublicShell>
   );
 }
@@ -1003,30 +775,22 @@ function AnswerReviewGroup({
 
   return (
     <section className="mb-7">
-      <h2 className="mb-4 text-sm font-black uppercase tracking-[0.16em] text-gold">{title}</h2>
+      <h2 className="mb-4 text-2xl font-black text-bone">{title}</h2>
       <div className="grid gap-4">
         {categoriesToShow.map((category) => (
           <div key={category.id} className="rounded-lg oak-card p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-xl font-black text-bone">{category.name}</h3>
-                <p className="mt-1 text-sm leading-6 text-ash">{category.purpose}</p>
               </div>
-              <p className="text-sm font-semibold text-gold">
-                {answeredInQuestions(category.questions.map((question) => question.id), session)}/{category.questions.length} answered
-              </p>
+              <Link className="secondary-button" to={`/session?part=${part}&q=${partQuestions.findIndex((item) => item.category.id === category.id)}`}>
+                Edit Section
+              </Link>
             </div>
             <div className="mt-4 grid gap-3">
               {category.questions.map((question) => {
                 const answer = session.answers[question.id];
                 const questionIndex = partQuestions.findIndex((item) => item.id === question.id);
-                const status = answer?.skippedAt
-                  ? "Skipped for now"
-                  : answer?.followUpNeeded
-                    ? "Needs follow-up"
-                    : answer?.originalAnswer.trim()
-                      ? "Answered"
-                      : "Blank";
                 return (
                   <div key={question.id} className="rounded-md border border-gold/15 bg-coal/35 p-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -1037,9 +801,6 @@ function AnswerReviewGroup({
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-wrap gap-2">
-                        <span className="rounded-full border border-gold/20 bg-soot/70 px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-gold">
-                          {status}
-                        </span>
                         <Link className="secondary-button" to={`/session?part=${part}&q=${questionIndex}`}>
                           Edit
                         </Link>
@@ -1056,10 +817,8 @@ function AnswerReviewGroup({
   );
 }
 
-function CompletePage({ session, clearSession }: SessionProps) {
+function CompletePage({ session }: SessionProps) {
   const [message, setMessage] = useState("");
-  const submissionId =
-    typeof window !== "undefined" ? localStorage.getItem("octavian-company-vision-submission-id") : "";
   const answerDownload = useMemo(() => originalAnswersText(session), [session]);
 
   const downloadAnswers = () => {
@@ -1080,29 +839,23 @@ function CompletePage({ session, clearSession }: SessionProps) {
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Intake complete</p>
         <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Your intake is complete.</h1>
         <div className="mx-auto mt-5 max-w-3xl space-y-4 text-lg leading-8 text-ash">
-          <p>Appreciate you filling this out.</p>
+          <p>Appreciate you taking the time to fill this out.</p>
           <p>
             Your answers have been saved so Neil can review them and build your Oakfire Planning Brief, the Oakfire x
             Legacy Sanctum opportunity plan, and the source material for Eighth Flame.
           </p>
-          <p>You do not need to do anything else right now unless Neil asks for follow-up details.</p>
         </div>
-        {submissionId && (
-          <p className="mx-auto mt-5 max-w-3xl rounded-lg border border-gold/20 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
-            Backend confirmation code: {submissionId}
-          </p>
-        )}
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="premium-card p-4">
-            <h2 className="text-lg font-black text-bone">Oakfire Vision submitted</h2>
+            <h2 className="text-lg font-black text-bone">Oakfire Vision saved</h2>
             <p className="mt-2 text-sm leading-6 text-ash">The brand, business, and food direction are ready for Neil to review.</p>
           </div>
           <div className="premium-card p-4">
-            <h2 className="text-lg font-black text-bone">Eighth Flame intake submitted</h2>
+            <h2 className="text-lg font-black text-bone">Eighth Flame intake saved</h2>
             <p className="mt-2 text-sm leading-6 text-ash">The future personal OS direction is captured as source material.</p>
           </div>
           <div className="premium-card p-4">
-            <h2 className="text-lg font-black text-bone">Neil can build the brief</h2>
+            <h2 className="text-lg font-black text-bone">Neil can review your answers</h2>
             <p className="mt-2 text-sm leading-6 text-ash">Your answers are saved for the Oakfire Planning Brief.</p>
           </div>
         </div>
