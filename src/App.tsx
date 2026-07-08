@@ -47,6 +47,7 @@ type SubmissionSummary = {
   oakfireAnswerCount?: number;
   personalOsAnswerCount?: number;
   hasPlanningOutputs?: boolean;
+  isTest?: boolean;
 };
 type StoredSubmission = SubmissionSummary & {
   session?: SessionState;
@@ -1552,8 +1553,11 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 function AdminPage() {
   const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
   const [message, setMessage] = useState("Loading submissions...");
+  const [testBusy, setTestBusy] = useState(false);
+  const [testMessage, setTestMessage] = useState("");
 
-  useEffect(() => {
+  const loadSubmissions = () => {
+    setMessage("Loading submissions...");
     apiJson<SubmissionSummary[]>("/api/submissions")
       .then((items) => {
         const sorted = [...items].sort((a, b) => new Date(b.completedAt || b.createdAt).getTime() - new Date(a.completedAt || a.createdAt).getTime());
@@ -1561,7 +1565,23 @@ function AdminPage() {
         setMessage(sorted.length ? "" : "No submissions yet.");
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : "Could not load submissions."));
-  }, []);
+  };
+
+  useEffect(() => { loadSubmissions(); }, []);
+
+  const createTestSubmission = async () => {
+    setTestBusy(true);
+    setTestMessage("");
+    try {
+      await apiJson("/api/submissions/test", { method: "POST" });
+      setTestMessage("Test submission created.");
+      loadSubmissions();
+    } catch (error) {
+      setTestMessage(error instanceof Error ? error.message : "Could not create test submission.");
+    } finally {
+      setTestBusy(false);
+    }
+  };
 
   return (
     <AdminShell>
@@ -1574,16 +1594,38 @@ function AdminPage() {
         <p className="mt-3 text-sm font-semibold text-gold">Loaded from backend submissions.</p>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <Metric label="Total submissions" value={`${submissions.length}`} />
-          <Metric label="Completed" value={`${submissions.length}`} />
+          <Metric label="Real submissions" value={`${submissions.filter((s) => !s.isTest).length}`} />
           <Metric label="Most recent" value={submissions[0]?.completedAt ? formatLastSaved(submissions[0].completedAt) : "None"} />
+        </div>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button
+            className="secondary-button border-ember/50 bg-ember/10 text-bone hover:bg-ember/20"
+            onClick={createTestSubmission}
+            disabled={testBusy}
+          >
+            {testBusy ? "Creating..." : "Create Full Test Submission"}
+          </button>
+          {testMessage && (
+            <p className="text-sm font-semibold text-gold">{testMessage}</p>
+          )}
         </div>
         {message && <p className="mt-5 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
         <div className="mt-6 grid gap-3">
           {submissions.map((submission) => (
-            <div key={submission.id} className="rounded-lg border border-gold/15 bg-coal/35 p-4 shadow-oak">
+            <div
+              key={submission.id}
+              className={`rounded-lg border p-4 shadow-oak ${submission.isTest ? "border-ember/40 bg-ember/8" : "border-gold/15 bg-coal/35"}`}
+            >
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-lg font-black text-bone">{submission.submitterName || "Octavian"}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-lg font-black text-bone">{submission.submitterName || "Octavian"}</p>
+                    {submission.isTest ? (
+                      <span className="rounded border border-ember/60 bg-ember/20 px-2 py-0.5 text-xs font-black uppercase tracking-[0.14em] text-bone">TEST</span>
+                    ) : (
+                      <span className="rounded border border-gold/40 bg-gold/15 px-2 py-0.5 text-xs font-black uppercase tracking-[0.14em] text-gold">REAL</span>
+                    )}
+                  </div>
                   <p className="mt-1 text-sm leading-6 text-ash">
                     Completed {formatLastSaved(submission.completedAt)}. Oakfire answers: {submission.oakfireAnswerCount ?? "0"}. Eighth Flame answers: {submission.personalOsAnswerCount ?? "0"}. Planning outputs: {submission.hasPlanningOutputs ? "Generated" : "Not generated yet"}.
                   </p>
@@ -1679,7 +1721,14 @@ function AdminSubmissionPage() {
     <AdminShell>
       <section className="admin-card mb-6 rounded-lg oak-card p-6 shadow-ember">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Submission detail</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">{submission.submitterName || "Octavian"} Intake</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-black text-bone sm:text-5xl">{submission.submitterName || "Octavian"} Intake</h1>
+          {submission.isTest ? (
+            <span className="rounded border border-ember/60 bg-ember/20 px-3 py-1 text-sm font-black uppercase tracking-[0.14em] text-bone">TEST</span>
+          ) : (
+            <span className="rounded border border-gold/40 bg-gold/15 px-3 py-1 text-sm font-black uppercase tracking-[0.14em] text-gold">REAL</span>
+          )}
+        </div>
         <p className="mt-3 text-ash">
           Completed {formatLastSaved(submission.completedAt)}. Updated {formatLastSaved(submission.updatedAt)}. Original answers are preserved.
         </p>

@@ -1,0 +1,124 @@
+I need a quick testing shortcut added to the existing Oakfire Vision Intake & Planning app.
+
+Do not redesign the app.
+Do not recreate the project.
+Do not change the public Octavian intake flow.
+Do not turn this into the Eighth Flame personal OS app.
+
+Problem:
+Testing the live deployed app currently requires answering or skipping all 58 intake questions. I need a fast way to test whether submissions save correctly, show in admin, generate planning outputs, and allow copy/download.
+
+Goal:
+Add a Neil-only test shortcut inside the admin side.
+
+Add this:
+
+1. Backend test submission route
+
+Create a backend route:
+
+POST /api/submissions/test
+
+This route should create and save a realistic completed test submission.
+
+The test submission should include:
+- isTest: true
+- submitterName: “Test Octavian”
+- status: completed
+- createdAt
+- updatedAt
+- completedAt
+- Oakfire answers
+- Eighth Flame Personal OS answers
+- Oakfire x Legacy Sanctum answers
+- skippedQuestions
+- needsFollowUpQuestions
+
+Use realistic sample answers for:
+- Oakfire story
+- business name direction
+- food identity
+- business goals
+- Oakfire x Legacy Sanctum opportunity
+- website direction
+- catering direction
+- content / YouTube direction
+- Eighth Flame app purpose
+- business/work
+- finances
+- health/lifestyle
+- cannabis strain library
+- AI Concierge: Orion
+- app must-haves
+
+The route must append the test submission to backend storage and must not delete or overwrite old submissions.
+
+2. Admin button
+
+On /admin, add a button:
+
+Create Full Test Submission
+
+This button should:
+- call POST /api/submissions/test
+- show a loading state
+- show success message: “Test submission created.”
+- refresh the submission list
+- make the new test submission visible immediately
+- allow me to open it like a normal submission
+
+Make sure this button only appears on /admin.
+Do not show it on the public Octavian intake side.
+
+3. Admin submission list
+
+Make test submissions clearly labeled as:
+
+TEST
+
+Real submissions should be labeled:
+
+REAL
+
+Do not rely only on color. Use visible text labels.
+
+4. Submission detail
+
+When I open the test submission at /admin/submissions/:id:
+- all test answers should display
+- Generate / Refresh Planning Outputs should work
+- Oakfire Planning Brief should generate
+- Oakfire x Legacy Sanctum Opportunity should generate
+- Eighth Flame Personal OS Blueprint should generate
+- AI prompts should generate
+- Codex prompt should generate
+- copy buttons should work
+- download buttons should work
+
+5. Public side
+
+Do not expose test controls on:
+- public intro
+- public intake
+- review answers
+- completion screen
+
+6. Testing requirements
+
+Do not consider complete unless:
+- npm run build works
+- /admin loads
+- Create Full Test Submission appears only on /admin
+- clicking it creates a backend submission
+- the test submission appears in /admin
+- opening the test submission works
+- Generate / Refresh Planning Outputs works for the test submission
+- copy/download tools still work
+- public side does not show test controls
+- no runtime errors remain
+
+At the end, summarize:
+- what route was added
+- what admin button was added
+- how to test it live
+- what files changed
