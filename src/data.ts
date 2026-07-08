@@ -266,7 +266,7 @@ export const categories: Category[] = [
   },
   {
     id: "ai",
-    name: "AI Tools & Future Personal App",
+    name: "AI Tools & Future Systems",
     purpose:
       "The goal is not to make things complicated. The goal is to build simple tools that help you think, plan, price, post, follow up, and grow while still working full time.",
     questions: [
@@ -277,8 +277,8 @@ export const categories: Category[] = [
       },
       {
         id: "ai-app-interest",
-        text: "Would you be interested later in a simple personal BBQ app built around you?",
-        why: "The future app should be built around your life, not generic business advice.",
+        text: "Would you be interested later in a simple personal OS built around you?",
+        why: "The future app should be built around your life, Oakfire, and the systems you would actually use.",
       },
       {
         id: "ai-app-jobs",
@@ -314,3 +314,132 @@ export const categories: Category[] = [
 export const flatQuestions = categories.flatMap((category) =>
   category.questions.map((question) => ({ ...question, category })),
 );
+
+export const personalOsCategories: Category[] = [
+  {
+    id: "os-purpose",
+    name: "Personal App Purpose",
+    purpose: "This section helps define what the future personal OS should actually do for Octavian, beyond just Oakfire.",
+    questions: [
+      { id: "os-purpose-help", text: "If Neil built you a personal app, what would you want it to help you with most?", why: "This identifies the most useful first job for the future app." },
+      { id: "os-purpose-focus", text: "Would you want the app to be mostly business-focused, personal-life-focused, or a balance of both?", why: "The app needs a clear center of gravity." },
+      { id: "os-purpose-weekly", text: "What would make you actually open and use the app every week?", why: "A useful personal OS has to fit real behavior." },
+      { id: "os-purpose-avoid", text: "What do you not want the app to become?", why: "Boundaries help keep the first version simple." },
+      { id: "os-purpose-hardest", text: "What feels hardest for you to keep organized right now?", why: "The hardest friction points are the best first targets." },
+    ],
+  },
+  {
+    id: "os-daily",
+    name: "Daily Life & Priorities",
+    purpose: "A personal OS should fit real life, not create more work.",
+    questions: [
+      { id: "os-daily-week", text: "What does a normal week look like for you right now?", why: "This helps the future app match Octavian's real schedule." },
+      { id: "os-daily-track", text: "What do you usually have to keep track of?", why: "The app should support existing responsibilities." },
+      { id: "os-daily-reminders", text: "What do you wish you had reminders or guidance for?", why: "Reminder needs shape the dashboard and weekly focus tools." },
+      { id: "os-daily-goals", text: "What goals are you trying to stay more consistent with?", why: "Consistency goals define useful personal tracking." },
+      { id: "os-daily-planning", text: "Would weekly planning, daily priorities, or simple reminders help you?", why: "This chooses the right planning rhythm." },
+    ],
+  },
+  {
+    id: "os-business-work",
+    name: "Business & Work",
+    purpose: "The future personal OS should support the work and business areas that actually matter to Octavian.",
+    questions: [
+      { id: "os-work-projects", text: "What jobs, side hustles, or business projects should the app support?", why: "This keeps the future app bigger than Oakfire when needed." },
+      { id: "os-work-real-estate", text: "Are you still doing real estate or realtor work? If yes, what would you want the app to help with?", why: "Real estate support should only be included if it matters now." },
+      { id: "os-work-other-income", text: "Besides Oakfire, are there any other business goals or income ideas you care about?", why: "The app should leave room for relevant income paths." },
+      { id: "os-work-leads", text: "Would lead tracking, follow-ups, task lists, or client notes help you?", why: "This clarifies whether CRM-like tools belong in the first version." },
+      { id: "os-work-avoid", text: "What business stuff do you usually put off or forget?", why: "Repeated friction points can become simple app workflows." },
+    ],
+  },
+  {
+    id: "os-oakfire-support",
+    name: "Oakfire Support Inside Future OS",
+    purpose: "Oakfire will be the main business module inside the future app.",
+    questions: [
+      { id: "os-oakfire-first", text: "What part of building Oakfire would you want the app to help with first?", why: "This identifies the first useful Oakfire Command feature." },
+      { id: "os-oakfire-tools", text: "Would you use tools for catering quotes, prep checklists, menu ideas, or customer follow-ups?", why: "This clarifies practical Oakfire tools." },
+      { id: "os-oakfire-content", text: "Would you want the app to help you plan content for YouTube, reels, and posts?", why: "Content planning may be part of Oakfire Command or Content Engine." },
+      { id: "os-oakfire-recipes", text: "Would you want the app to help track ideas for sauces, rubs, recipes, or signature plates?", why: "Recipe and offer ideas can become saved planning assets." },
+      { id: "os-oakfire-useful", text: "What would make the Oakfire module feel useful immediately?", why: "Immediate usefulness should drive the MVP." },
+    ],
+  },
+  {
+    id: "os-money",
+    name: "Money & Planning",
+    purpose: "This section helps decide whether the future personal OS should include finance and planning tools.",
+    questions: [
+      { id: "os-money-scope", text: "Would you want the app to help track personal money, business money, or both?", why: "Finance tools need the right scope." },
+      { id: "os-money-tools", text: "Would budgeting, savings goals, expense tracking, or income tracking help you?", why: "This identifies simple first finance features." },
+      { id: "os-money-oakfire-expenses", text: "Would you want a simple Oakfire expense tracker?", why: "Oakfire costs may need lightweight tracking early." },
+      { id: "os-money-catering-profit", text: "Would you want help estimating catering profits or food costs?", why: "Profit estimates can support catering decisions." },
+      { id: "os-money-first", text: "What financial area would be most useful to organize first?", why: "This prioritizes finance without overbuilding." },
+    ],
+  },
+  {
+    id: "os-health",
+    name: "Health, Energy & Lifestyle",
+    purpose: "The app can support the man building the brand, not just the brand itself.",
+    questions: [
+      { id: "os-health-support", text: "Would you want the app to help with health, energy, sleep, workouts, food, hydration, or recovery?", why: "Personal support should be useful without becoming a health app." },
+      { id: "os-health-goals", text: "What health or lifestyle goals matter to you right now?", why: "This shows which goals deserve tracking." },
+      { id: "os-health-habits", text: "Would simple habit tracking help you?", why: "Habit tools should stay lightweight." },
+      { id: "os-health-reminders", text: "Would reminders for meals, water, supplements, or workouts help?", why: "Reminders can support energy and consistency." },
+      { id: "os-health-difference", text: "What lifestyle area would make the biggest difference if it were more organized?", why: "The highest-impact area should guide the first version." },
+    ],
+  },
+  {
+    id: "os-cannabis",
+    name: "Cannabis / Strain Library",
+    purpose: "This is a personal module only. It should be mature, private, and useful, not the center of the app.",
+    questions: [
+      { id: "os-cannabis-interest", text: "Would you want a private cannabis strain library inside the future app?", why: "This confirms whether the feature belongs at all." },
+      { id: "os-cannabis-info", text: "What strain information do you like to look up?", why: "This defines useful strain details." },
+      { id: "os-cannabis-save", text: "Would you want to save favorite strains, effects, flavors, terpenes, ratings, or notes?", why: "Saved details shape the data model." },
+      { id: "os-cannabis-effects", text: "Would you want to track what strains helped with relaxing, sleep, creativity, appetite, focus, or pain?", why: "Personal effect notes make the library more useful than search." },
+      { id: "os-cannabis-better", text: "What would make this feature better than just searching random websites?", why: "This identifies the personal value of the module." },
+    ],
+  },
+  {
+    id: "os-learning",
+    name: "Learning & Guidance",
+    purpose: "The future personal OS should help Octavian learn and build without overwhelming him.",
+    questions: [
+      { id: "os-learning-orion-teach", text: "What would you want a future AI concierge to teach or explain to you?", why: "This defines the teaching role." },
+      { id: "os-learning-lessons", text: "Would you want simple business lessons, brand lessons, content lessons, or AI/tool lessons?", why: "This selects learning tracks." },
+      { id: "os-learning-style", text: "Do you prefer short answers, step-by-step guidance, or deeper explanations?", why: "Guidance style should match Octavian." },
+      { id: "os-learning-oakfire", text: "What do you want to understand better about building Oakfire?", why: "This keeps learning grounded in the business." },
+      { id: "os-learning-action", text: "What kind of advice would actually help you take action?", why: "Advice should lead to movement, not overwhelm." },
+    ],
+  },
+  {
+    id: "os-orion",
+    name: "AI Concierge",
+    purpose: "This section defines whether a future AI concierge belongs in the personal OS.",
+    questions: [
+      { id: "os-orion-ask", text: "What would you want to ask a future AI concierge most often?", why: "This defines common use cases." },
+      { id: "os-orion-role", text: "Should the AI concierge feel more like a business coach, personal assistant, strategist, or simple helper?", why: "Role clarity shapes the AI experience." },
+      { id: "os-orion-tone", text: "What tone should the AI concierge have: direct, encouraging, funny, serious, calm, or a mix?", why: "Tone makes the tool feel built for Octavian." },
+      { id: "os-orion-voice", text: "Would voice input be helpful for talking to the AI concierge?", why: "Voice may matter for real use." },
+      { id: "os-orion-never", text: "What should the AI concierge never do or never sound like?", why: "Boundaries make the AI concierge safer and more trusted." },
+    ],
+  },
+  {
+    id: "os-feel",
+    name: "App Feel & Must-Haves",
+    purpose: "The future app should feel built for Octavian, not like generic software.",
+    questions: [
+      { id: "os-feel-style", text: "Should the future app feel dark, premium, simple, bold, luxury, rugged, or something else?", why: "This defines the product atmosphere." },
+      { id: "os-feel-oakfire", text: "Would you want the design connected to Oakfire's colors and logo?", why: "This decides how closely the future app should borrow Oakfire identity." },
+      { id: "os-feel-must", text: "What features would be must-have for version one?", why: "MVP must-haves prevent overbuilding." },
+      { id: "os-feel-later", text: "What features would be cool later, but not needed first?", why: "Later ideas should not clutter the foundation." },
+      { id: "os-feel-three", text: "If Neil could only build three things first, what should they be?", why: "This forces the clearest first build priorities." },
+    ],
+  },
+];
+
+export const flatPersonalOsQuestions = personalOsCategories.flatMap((category) =>
+  category.questions.map((question) => ({ ...question, category })),
+);
+
+export const allQuestions = [...flatQuestions, ...flatPersonalOsQuestions];

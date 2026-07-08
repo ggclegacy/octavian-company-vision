@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { flatQuestions } from "./data";
+import { allQuestions } from "./data";
 import {
   buildFinalizedVision,
   generateFirstVisionDraft,
@@ -31,7 +31,7 @@ export type SessionState = {
   sessionId: string;
   createdAt: string;
   updatedAt: string;
-  stage: "Not Started" | "Answering" | "Draft Generated" | "Reviewing" | "Finalized";
+  stage: "Not Started" | "Answering" | "Draft Generated" | "Reviewing" | "Finalized" | "Completed";
   currentQuestionIndex: number;
   answers: Record<string, AnswerRecord>;
   generatedVisionDraft: VisionSection[];
@@ -39,6 +39,7 @@ export type SessionState = {
   reviewFeedback: Record<string, ReviewFeedback>;
   finalizedVision: VisionSection[];
   finalizedAt: string | null;
+  completedAt: string | null;
   lastSavedAt: string | null;
 };
 
@@ -60,12 +61,13 @@ function newSession(): SessionState {
     reviewFeedback: {},
     finalizedVision: [],
     finalizedAt: null,
+    completedAt: null,
     lastSavedAt: null,
   };
 }
 
 function normalizeAnswer(questionId: string, value: unknown): AnswerRecord | null {
-  const question = flatQuestions.find((item) => item.id === questionId);
+  const question = allQuestions.find((item) => item.id === questionId);
   if (!question) return null;
 
   if (typeof value === "string") {
@@ -130,9 +132,11 @@ function normalizeSession(value: unknown): SessionState {
     reviewFeedback,
     finalizedVision: Array.isArray(raw.finalizedVision) ? raw.finalizedVision : [],
     finalizedAt: raw.finalizedAt || null,
+    completedAt: raw.completedAt || null,
     lastSavedAt: raw.lastSavedAt || raw.lastUpdated || null,
   };
-  if (imported.finalizedVision.length) imported.stage = "Finalized";
+  if (imported.completedAt) imported.stage = "Completed";
+  else if (imported.finalizedVision.length) imported.stage = "Finalized";
   else if (Object.values(imported.reviewFeedback).some((feedback) => Object.values(normalizeFeedback(feedback)).some(Boolean))) {
     imported.stage = "Reviewing";
   } else if (imported.generatedVisionDraft.length) imported.stage = "Draft Generated";
@@ -167,7 +171,7 @@ export function useSession() {
 
   const saveOriginalAnswer = useCallback(
     (questionId: string, originalAnswer: string) => {
-      const question = flatQuestions.find((item) => item.id === questionId);
+      const question = allQuestions.find((item) => item.id === questionId);
       if (!question) return;
 
       touch((current, timestamp) => ({
@@ -193,7 +197,7 @@ export function useSession() {
 
   const organizeAnswer = useCallback(
     (questionId: string, originalAnswer?: string) => {
-      const question = flatQuestions.find((item) => item.id === questionId);
+      const question = allQuestions.find((item) => item.id === questionId);
       if (!question) return;
 
       touch((current, timestamp) => {
@@ -246,7 +250,7 @@ export function useSession() {
 
   const skipQuestion = useCallback(
     (questionId: string) => {
-      const question = flatQuestions.find((item) => item.id === questionId);
+      const question = allQuestions.find((item) => item.id === questionId);
       if (!question) return;
 
       touch((current, timestamp) => {
@@ -275,7 +279,7 @@ export function useSession() {
 
   const setFollowUpNeeded = useCallback(
     (questionId: string, followUpNeeded: boolean) => {
-      const question = flatQuestions.find((item) => item.id === questionId);
+      const question = allQuestions.find((item) => item.id === questionId);
       if (!question) return;
 
       touch((current) => {
@@ -330,6 +334,14 @@ export function useSession() {
     return finalized;
   }, [touch]);
 
+  const completeIntake = useCallback(() => {
+    touch((current, timestamp) => ({
+      ...current,
+      stage: "Completed",
+      completedAt: current.completedAt || timestamp,
+    }));
+  }, [touch]);
+
   const importSession = useCallback((value: unknown) => {
     if (!value || typeof value !== "object") {
       throw new Error("This does not look like a valid Octavian vision session backup.");
@@ -378,6 +390,7 @@ export function useSession() {
     setFollowUpNeeded,
     saveFeedback,
     finalizeVision,
+    completeIntake,
     importSession,
     clearSession,
     answeredCount,

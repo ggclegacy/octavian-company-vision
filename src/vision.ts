@@ -1,4 +1,4 @@
-import { categories } from "./data";
+import { categories, personalOsCategories, type Category } from "./data";
 import type { AnswerRecord, ReviewFeedback, SessionState } from "./storage";
 
 const need = "Needs follow-up";
@@ -13,10 +13,169 @@ export type VisionSection = {
   strategicRead?: string;
 };
 
+const futurePersonalOSModules = [
+  {
+    name: "Personal Dashboard",
+    description: "Daily focus, priorities, goals, reminders, and life/business balance.",
+  },
+  {
+    name: "Oakfire Command",
+    description: "Brand vision, business direction, website plan, catering path, and company roadmap.",
+  },
+  {
+    name: "Brand Builder",
+    description: "Story, voice, visual identity, name direction, customer experience, and positioning.",
+  },
+  {
+    name: "Catering System",
+    description: "Event types, package ideas, prep checklists, quote support, and customer follow-up.",
+  },
+  {
+    name: "Content Engine",
+    description: "YouTube ideas, reels, captions, cook breakdowns, posting rhythm, and content planning.",
+  },
+  {
+    name: "Growth Roadmap",
+    description: "30-day, 90-day, and one-year path for building Oakfire while working full time.",
+  },
+  {
+    name: "AI Concierge",
+    description: "A simple assistant for planning, pricing, messaging, content ideas, learning, and decision-making.",
+  },
+  {
+    name: "Strain Library / Cannabis Explorer",
+    description:
+      "A personal module for cannabis strain research, favorites, notes, effects, terpene learning, and personal tracking. Keep it mature and professional; the whole app should not feel cannabis-focused.",
+  },
+  {
+    name: "Finance & Planning",
+    description: "Personal and Oakfire money tracking, savings goals, expense notes, income planning, and catering profit estimates.",
+  },
+  {
+    name: "Health / Lifestyle",
+    description: "Lightweight goals and reminders for energy, sleep, workouts, food, hydration, recovery, and consistency.",
+  },
+  {
+    name: "Real Estate / Realtor Support",
+    description: "Optional work module for leads, follow-ups, task lists, client notes, and real estate support if still relevant.",
+  },
+  {
+    name: "Notes & Favorites",
+    description: "Personal notes, ideas, inspirations, favorite strains, favorite recipes, and business thoughts.",
+  },
+  {
+    name: "Weekly Focus",
+    description: "A simple weekly planning system to choose priorities and track progress.",
+  },
+];
+
+const futureAppNamingIdeas = [
+  {
+    name: "Eighth Flame",
+    meaning: "A mythic/personal name that suggests an eighth source of drive, craft, and identity.",
+    fit: "Could feel premium, mysterious, and personal without being limited to barbecue.",
+    downside: "May need explanation so it does not feel abstract.",
+  },
+  {
+    name: "Aurelius",
+    meaning: "A refined name with imperial/golden associations and a disciplined personal tone.",
+    fit: "Could match Octavian's name energy and feel like a serious personal operating system.",
+    downside: "May feel too classical or detached from Oakfire if not grounded visually.",
+  },
+  {
+    name: "The Oakfire Codex",
+    meaning: "A living book/system for Oakfire knowledge, decisions, plans, and operating notes.",
+    fit: "Strong bridge between Oakfire brand identity and a planning/knowledge system.",
+    downside: "May sound more like a document library than a daily-use app.",
+  },
+  {
+    name: "The Fire Ledger",
+    meaning: "A record of goals, business moves, recipes, notes, wins, and learning.",
+    fit: "Feels grounded, useful, and business-friendly.",
+    downside: "Could feel too accounting-focused if the UI is not warm and personal.",
+  },
+  {
+    name: "Crown & Crucible",
+    meaning: "A premium name about pressure, transformation, leadership, and craft.",
+    fit: "Could support a masculine, elevated, growth-focused personal OS.",
+    downside: "May feel too brand-like or intense for a simple everyday tool.",
+  },
+  {
+    name: "Octavian OS",
+    meaning: "A direct personal operating system built around Octavian's life and business.",
+    fit: "Immediately clear and practical.",
+    downside: "More functional than evocative; may feel generic software-like.",
+  },
+  {
+    name: "Oakfire Command",
+    meaning: "A command center for the Oakfire business and related operating systems.",
+    fit: "Very clear for the business module and brand direction.",
+    downside: "May be too Oakfire-specific if the future app also needs personal modules.",
+  },
+  {
+    name: "Blackened Oak",
+    meaning: "A darker, premium Oakfire-adjacent name rooted in smoke, craft, and resilience.",
+    fit: "Strong visual/brand atmosphere and easy extension from the current identity.",
+    downside: "May sound more like a brand or venue than a personal OS.",
+  },
+];
+
+const questionsBeforeFutureApp = [
+  "What should the app be called?",
+  "Should the app feel more like Octavian's personal OS or Oakfire's business command center?",
+  "What does Octavian need most first: brand guidance, catering systems, content help, or personal planning?",
+  "What should be the first module he actually uses weekly?",
+  "Should cannabis strain research be private/personal only?",
+  "Should real estate / realtor support be included if Octavian still does that work?",
+  "What should Neil build first so the app feels useful immediately?",
+  "What should be saved/editable in the app long term?",
+];
+
 const sectionMap = [
   {
+    id: "session-overview",
+    title: "Session Overview",
+    sourceQuestionIds: ["final-understand", "goals-six-months", "goals-two-years", "goals-real-business"],
+    lines: [
+      ["Most important vision signal", "final-understand"],
+      ["Near-term session focus", "goals-six-months"],
+      ["One-to-two-year direction", "goals-two-years"],
+      ["What makes it feel real", "goals-real-business"],
+    ],
+    strategicRead:
+      "This overview should help Neil understand the clearest planning signals before building any future app or business system.",
+  },
+  {
+    id: "original-vision-themes",
+    title: "Octavian's Original Vision Themes",
+    sourceQuestionIds: ["story-love", "story-meaning", "story-feeling", "goals-dream", "final-understand"],
+    lines: [
+      ["Why barbecue matters", "story-love"],
+      ["Personal meaning", "story-meaning"],
+      ["Feeling to create", "story-feeling"],
+      ["Long-term dream", "goals-dream"],
+      ["Core message for Neil", "final-understand"],
+    ],
+    strategicRead:
+      "This section preserves the emotional source material and should stay close to Octavian's own words.",
+  },
+  {
+    id: "oakfire-brand-story-direction",
+    title: "Oakfire Brand Story Direction",
+    sourceQuestionIds: ["story-love", "story-inspired", "story-meaning", "story-feeling", "story-memory"],
+    lines: [
+      ["Brand story root", "story-love"],
+      ["Influences and roots", "story-inspired"],
+      ["Personal meaning", "story-meaning"],
+      ["Customer feeling to create", "story-feeling"],
+      ["Memories or personal details", "story-memory"],
+    ],
+    strategicRead:
+      "The strongest story material should become future About-page copy, content prompts, customer language, and brand positioning.",
+  },
+  {
     id: "executive-vision",
-    title: "Executive Vision",
+    title: "Oakfire Draft Company Vision",
     sourceQuestionIds: ["final-understand", "goals-six-months", "goals-two-years", "goals-dream", "goals-real-business"],
     lines: [
       ["Company vision", "final-understand"],
@@ -28,21 +187,8 @@ const sectionMap = [
     strategicRead: "This section shows what the company can become and what will make it feel real.",
   },
   {
-    id: "brand-story",
-    title: "Brand Story",
-    sourceQuestionIds: ["story-love", "story-inspired", "story-meaning", "story-feeling", "story-memory"],
-    lines: [
-      ["Why BBQ matters", "story-love"],
-      ["Influences and roots", "story-inspired"],
-      ["Personal meaning", "story-meaning"],
-      ["Customer feeling to create", "story-feeling"],
-      ["Memories or personal details", "story-memory"],
-    ],
-    strategicRead: "The strongest story material should become the About page, social content, and the emotional core of the brand.",
-  },
-  {
     id: "brand-identity-name-direction",
-    title: "Brand Identity / Name Direction",
+    title: "Business Name / Identity Direction",
     sourceQuestionIds: ["name-current", "name-choice", "name-like", "name-dislike", "name-inspiration"],
     lines: [
       ["Current name", "name-current"],
@@ -55,7 +201,7 @@ const sectionMap = [
   },
   {
     id: "visual-direction",
-    title: "Visual Direction",
+    title: "Visual Brand Direction",
     sourceQuestionIds: ["brand-colors", "brand-clear-colors", "brand-colorblindness", "brand-feel", "brand-lead"],
     lines: [
       ["Color direction", "brand-colors"],
@@ -68,7 +214,7 @@ const sectionMap = [
   },
   {
     id: "food-positioning",
-    title: "Food Positioning",
+    title: "Food Identity & Signature Offers",
     sourceQuestionIds: ["food-meats", "food-sides", "food-compliments", "food-plate", "food-different"],
     lines: [
       ["Best meats", "food-meats"],
@@ -81,7 +227,7 @@ const sectionMap = [
   },
   {
     id: "business-model-path",
-    title: "Business Model Path",
+    title: "Business Model Direction",
     sourceQuestionIds: ["goals-six-months", "goals-two-years", "goals-dream", "goals-paths", "goals-real-business"],
     lines: [
       ["6-month goal", "goals-six-months"],
@@ -94,7 +240,7 @@ const sectionMap = [
   },
   {
     id: "website-plan",
-    title: "Website Plan",
+    title: "Website Direction",
     sourceQuestionIds: ["web-job", "web-goal", "web-next-step", "web-social", "web-success"],
     lines: [
       ["Website job", "web-job"],
@@ -107,7 +253,7 @@ const sectionMap = [
   },
   {
     id: "catering-system-direction",
-    title: "Catering System Direction",
+    title: "Catering Direction",
     sourceQuestionIds: ["cat-events", "cat-size", "cat-equipment", "cat-costs", "cat-stress"],
     lines: [
       ["Event types to serve", "cat-events"],
@@ -120,7 +266,7 @@ const sectionMap = [
   },
   {
     id: "content-youtube-engine",
-    title: "Content & YouTube Engine",
+    title: "Content / YouTube Direction",
     sourceQuestionIds: ["content-start", "content-filming", "content-kind", "content-frequency", "content-help"],
     lines: [
       ["Why the channel started", "content-start"],
@@ -133,11 +279,11 @@ const sectionMap = [
   },
   {
     id: "ai-personal-app-roadmap",
-    title: "AI Tools / Personal App Roadmap",
+    title: "AI Tools & Future App Systems",
     sourceQuestionIds: ["ai-help", "ai-app-interest", "ai-app-jobs", "ai-hardest", "ai-first"],
     lines: [
       ["Help wanted most", "ai-help"],
-      ["Interest in a personal BBQ app", "ai-app-interest"],
+      ["Interest in the future personal OS", "ai-app-interest"],
       ["App jobs to support", "ai-app-jobs"],
       ["Hardest part while working full time", "ai-hardest"],
       ["First AI use case", "ai-first"],
@@ -182,7 +328,7 @@ export function organizeAnswerText(questionText: string, originalAnswer: string)
     ["kind of content", "The content direction should include"],
     ["how often", "A realistic content rhythm is"],
     ["ai could help", "The first AI opportunity is"],
-    ["app to help", "A future personal BBQ app should help with"],
+    ["app to help", "A future personal OS app should help with"],
     ["understand most", "The most important vision signal is"],
   ] as const;
   const match = starts.find(([needle]) => lowerQuestion.includes(needle));
@@ -295,7 +441,7 @@ function buildThirtyDayMoves(answers: Record<string, AnswerRecord>): VisionSecti
 
 function buildFollowUps(answers: Record<string, AnswerRecord>): VisionSection {
   const questions: string[] = [];
-  categories.forEach((category) => {
+  [...categories, ...personalOsCategories].forEach((category) => {
     category.questions.forEach((question) => {
       const answer = answers[question.id];
       if (answer?.skippedAt) questions.push(`${question.text} (skipped for now)`);
@@ -311,9 +457,13 @@ function buildFollowUps(answers: Record<string, AnswerRecord>): VisionSection {
   if (!hasUsefulAnswer(answers, "web-goal")) questions.push("What should the website's primary call-to-action be?");
   if (!hasUsefulAnswer(answers, "cat-size")) questions.push("What event size can Octavian confidently handle right now?");
   if (!hasUsefulAnswer(answers, "content-frequency")) questions.push("What posting rhythm is realistic while working full time?");
-  if (!hasUsefulAnswer(answers, "ai-app-jobs")) questions.push("What should a future personal BBQ app help with first?");
+  if (!hasUsefulAnswer(answers, "ai-app-jobs")) questions.push("What should a future personal OS app help with first?");
   if (!hasUsefulAnswer(answers, "food-plate")) questions.push("What is the signature plate that should lead the brand?");
   if (!hasUsefulAnswer(answers, "goals-paths")) questions.push("Which first business model path should lead: catering, plate drops, pop-ups, content, or something else?");
+  if (!hasUsefulAnswer(answers, "os-purpose-weekly")) questions.push("What would make Octavian actually open the future personal OS every week?");
+  if (!hasUsefulAnswer(answers, "os-orion-role")) questions.push("Should the AI concierge feel more like a business coach, personal assistant, strategist, or simple helper?");
+  if (!hasUsefulAnswer(answers, "os-feel-three")) questions.push("If Neil could only build three future personal OS features first, what should they be?");
+  if (!hasUsefulAnswer(answers, "os-cannabis-interest")) questions.push("Should the cannabis module be private/personal only, and should it be included in version one?");
 
   return {
     id: "follow-up-questions",
@@ -322,6 +472,48 @@ function buildFollowUps(answers: Record<string, AnswerRecord>): VisionSection {
     body: [...new Set(questions)].slice(0, 18).length
       ? [...new Set(questions)].slice(0, 18)
       : ["No major missing questions from the guided session."],
+  };
+}
+
+function buildOpenDecisions(answers: Record<string, AnswerRecord>): VisionSection {
+  const decisions = [
+    hasUsefulAnswer(answers, "name-choice")
+      ? `Business/name direction: use "${originalValue(answers, "name-choice")}" as the current decision signal, then confirm before external rollout.`
+      : "Business/name direction: Needs follow-up.",
+    hasUsefulAnswer(answers, "food-plate")
+      ? `Signature offer: use "${originalValue(answers, "food-plate")}" as the starting evidence for the hero plate.`
+      : "Signature offer / hero plate: Needs follow-up.",
+    hasUsefulAnswer(answers, "goals-paths")
+      ? `First business path: use "${originalValue(answers, "goals-paths")}" as the current path signal.`
+      : "First business path: Needs follow-up.",
+    hasUsefulAnswer(answers, "web-goal")
+      ? `Website primary goal: use "${originalValue(answers, "web-goal")}" as the current website direction.`
+      : "Website primary goal: Needs follow-up.",
+    hasUsefulAnswer(answers, "ai-first")
+      ? `First future app/AI value: use "${originalValue(answers, "ai-first")}" as the first opportunity signal.`
+      : "First future app/AI value: Needs follow-up.",
+    "Future app name direction: compare name options and confirm which one feels custom to Octavian.",
+    "AI concierge direction: confirm its role, tone, and first useful jobs.",
+    "First useful future app module: Needs follow-up if not clearly answered.",
+    "Privacy boundary for personal modules: Needs follow-up, especially for Strain Library / Cannabis Explorer.",
+  ];
+
+  return {
+    id: "open-decisions",
+    title: "Open Decisions",
+    sourceQuestionIds: ["name-choice", "food-plate", "goals-paths", "web-goal", "ai-first"],
+    strategicRead: "These decisions should be confirmed before Neil starts the separate future app foundation.",
+    body: decisions,
+  };
+}
+
+export function buildQuestionsBeforeFutureApp(): VisionSection {
+  return {
+    id: "questions-before-future-app",
+    title: "Questions to Ask Before Building the Future App",
+    sourceQuestionIds: [],
+    strategicRead: "These questions keep the next build focused and prevent the future app from becoming too broad too early.",
+    body: questionsBeforeFutureApp,
   };
 }
 
@@ -339,8 +531,69 @@ export function buildFutureRoadmap(answers: Record<string, AnswerRecord>): Visio
       "Suggested roadmap: Brand/name direction, food identity, simple website plan, catering inquiry structure, and content basics.",
       "Phase 2: Growth Systems",
       `Suggested roadmap: Catering packages, quote calculator, customer follow-up, review/testimonial system, content calendar, and YouTube/Reels workflow.${cateringNeed ? ` Grounded need: ${cateringNeed}` : ""}${contentNeed ? ` Content signal: ${contentNeed}` : ""}`,
-      "Phase 3: Personal BBQ OS",
+      "Phase 3: Future Personal OS",
       `Suggested roadmap: AI concierge, prep checklist assistant, pricing/margin helper, content idea generator, weekly business coach, and personal dashboard for building while working full time.${aiNeed ? ` First AI signal: ${aiNeed}` : ""}`,
+    ],
+  };
+}
+
+export function buildFuturePersonalOSBlueprint(): VisionSection {
+  return {
+    id: "future-personal-os-blueprint",
+    title: "Future Personal OS Blueprint",
+    sourceQuestionIds: ["ai-help", "ai-app-interest", "ai-app-jobs", "ai-hardest", "ai-first"],
+    strategicRead:
+      "This section defines source material for a separate future personal OS app. It is not the current intake app.",
+    body: [
+      "Framing: The future app is not just a vision page. It is Octavian's personal/business operating system, with Oakfire built into it as a major business module.",
+      "Purpose: The future personal OS should be a separate app that helps Octavian manage Oakfire, content, goals, systems, learning, and personal operating rhythm from one simple command center.",
+      "Positioning: Business-focused but personal, designed for a non-technical user, with future AI integration planned but not required in the first foundation build.",
+      ...futurePersonalOSModules.map((module) => `${module.name}: ${module.description}`),
+    ],
+  };
+}
+
+function buildPersonalOsIntakeSections(answers: Record<string, AnswerRecord>): VisionSection[] {
+  const sectionTitles: Record<string, string> = {
+    "os-purpose": "Future Personal OS App Purpose",
+    "os-daily": "Personal Dashboard",
+    "os-business-work": "Business & Work Support",
+    "os-oakfire-support": "Oakfire Command",
+    "os-money": "Finance & Planning",
+    "os-health": "Health / Lifestyle",
+    "os-cannabis": "Strain Library / Cannabis Explorer",
+    "os-learning": "Learning & Guidance",
+    "os-orion": "AI Concierge",
+    "os-feel": "First Version Priorities",
+  };
+
+  return personalOsCategories.map((category) => ({
+    id: `eighth-flame-${category.id}`,
+    title: sectionTitles[category.id] || category.name,
+    sourceQuestionIds: category.questions.map((question) => question.id),
+    strategicRead: `${category.purpose} Use this as source material for the separate future personal OS app.`,
+    body: [
+      `Draft content: ${sectionTitles[category.id] || category.name} translates Octavian's personal OS intake answers into future app build source material.`,
+      ...category.questions.map((question) => `${question.text}: ${answerValue(answers, question.id)}`),
+      ...category.questions
+        .map((question) => needsNote(answers, question.id))
+        .filter(Boolean)
+        .map((note) => `Needs-follow-up note: ${note}`),
+    ],
+  }));
+}
+
+export function buildFutureAppNamingIdeas(): VisionSection {
+  return {
+    id: "future-app-naming-ideas",
+    title: "Future App Name Decision",
+    sourceQuestionIds: ["name-inspiration", "brand-feel", "ai-app-interest"],
+    strategicRead: "These are placeholders for review, not a final name decision.",
+    body: [
+      "The final name should feel custom to Octavian, not like generic software.",
+      ...futureAppNamingIdeas.map(
+        (idea) => `${idea.name}: Meaning - ${idea.meaning} Why it could fit - ${idea.fit} Potential downside - ${idea.downside}`,
+      ),
     ],
   };
 }
@@ -359,7 +612,17 @@ export function generateFirstVisionDraft(answers: Record<string, AnswerRecord>):
     ],
   }));
 
-  return [...draft, buildThirtyDayMoves(answers), buildFutureRoadmap(answers), buildFollowUps(answers)];
+  return [
+    ...draft,
+    buildThirtyDayMoves(answers),
+    buildFutureRoadmap(answers),
+    buildFuturePersonalOSBlueprint(),
+    ...buildPersonalOsIntakeSections(answers),
+    buildFutureAppNamingIdeas(),
+    buildQuestionsBeforeFutureApp(),
+    buildFollowUps(answers),
+    buildOpenDecisions(answers),
+  ];
 }
 
 export function normalizeFeedback(value: unknown): ReviewFeedback {
@@ -397,9 +660,23 @@ export function buildFinalizedVision(
   });
 
   return [
-    ...refined.filter((section) => section.id !== "follow-up-questions" && section.id !== "future-build-roadmap"),
+    ...refined.filter(
+      (section) =>
+        section.id !== "follow-up-questions" &&
+        section.id !== "future-build-roadmap" &&
+        section.id !== "future-personal-os-blueprint" &&
+        section.id !== "future-app-naming-ideas" &&
+        section.id !== "questions-before-future-app" &&
+        section.id !== "open-decisions" &&
+        !section.id.startsWith("eighth-flame-"),
+    ),
     buildFutureRoadmap(answers),
+    buildFuturePersonalOSBlueprint(),
+    ...buildPersonalOsIntakeSections(answers),
+    buildFutureAppNamingIdeas(),
+    buildQuestionsBeforeFutureApp(),
     buildFollowUps(answers),
+    buildOpenDecisions(answers),
   ];
 }
 
@@ -412,8 +689,8 @@ function sectionText(sections: VisionSection[], answers?: Record<string, AnswerR
     .join("\n\n");
 }
 
-export function originalAnswersText(session: SessionState) {
-  return categories
+function originalAnswersForCategories(session: SessionState, categorySet: Category[]) {
+  return categorySet
     .map((category) => {
       const responses = category.questions
         .map((question) => {
@@ -433,8 +710,8 @@ export function originalAnswersText(session: SessionState) {
     .join("\n\n");
 }
 
-export function organizedAnswersText(session: SessionState) {
-  return categories
+function organizedAnswersForCategories(session: SessionState, categorySet: Category[]) {
+  return categorySet
     .map((category) => {
       const responses = category.questions
         .map((question) => {
@@ -447,6 +724,30 @@ export function organizedAnswersText(session: SessionState) {
       return `${category.name}\n${responses}`;
     })
     .join("\n\n");
+}
+
+export function originalOakfireAnswersText(session: SessionState) {
+  return originalAnswersForCategories(session, categories);
+}
+
+export function originalPersonalOsAnswersText(session: SessionState) {
+  return originalAnswersForCategories(session, personalOsCategories);
+}
+
+export function originalAnswersText(session: SessionState) {
+  return `OAKFIRE ORIGINAL ANSWERS\n${originalOakfireAnswersText(session)}\n\nEIGHTH FLAME ORIGINAL ANSWERS\n${originalPersonalOsAnswersText(session)}`;
+}
+
+export function organizedOakfireAnswersText(session: SessionState) {
+  return organizedAnswersForCategories(session, categories);
+}
+
+export function organizedPersonalOsAnswersText(session: SessionState) {
+  return organizedAnswersForCategories(session, personalOsCategories);
+}
+
+export function organizedAnswersText(session: SessionState) {
+  return `OAKFIRE ORGANIZED ANSWERS\n${organizedOakfireAnswersText(session)}\n\nEIGHTH FLAME ORGANIZED ANSWERS\n${organizedPersonalOsAnswersText(session)}`;
 }
 
 export function reviewFeedbackText(session: SessionState) {
@@ -470,6 +771,7 @@ export function finalVisionSections(session: SessionState) {
 }
 
 export function sessionStatus(session: SessionState) {
+  if (session.completedAt) return "Completed";
   if (session.stage) return session.stage;
   if (session.finalizedVision.length) return "Finalized";
   if (Object.values(session.reviewFeedback).some((feedback) => Object.values(normalizeFeedback(feedback)).some(Boolean))) {
@@ -481,19 +783,23 @@ export function sessionStatus(session: SessionState) {
 
 export function beforeOctavianLeavesChecklist() {
   return [
-    "Confirm business name direction",
-    "Confirm strongest food identity",
+    "Confirm Oakfire name direction",
+    "Confirm top food identity",
     "Confirm first business model path",
     "Confirm website goal",
     "Confirm catering next step",
-    "Confirm content direction",
-    "Confirm whether future personal BBQ app is part of the vision",
-    "Download full session backup",
-    "Copy AI prompt for final vision document",
+    "Confirm future app name direction",
+    "Confirm first useful future app module",
+    "Download session backup",
+    "Copy source material for future app",
   ];
 }
 
 export function sessionBackup(session: SessionState) {
+  const oakfireAnswers = Object.fromEntries(Object.entries(session.answers).filter(([questionId]) => !questionId.startsWith("os-")));
+  const personalOsAnswers = Object.fromEntries(Object.entries(session.answers).filter(([questionId]) => questionId.startsWith("os-")));
+  const planningSections = finalVisionSections(session);
+  const planningBriefText = sectionText(planningSections, session.answers);
   return {
     sessionId: session.sessionId,
     createdAt: session.createdAt,
@@ -501,14 +807,36 @@ export function sessionBackup(session: SessionState) {
     lastSavedAt: session.lastSavedAt,
     currentQuestionIndex: session.currentQuestionIndex,
     answers: session.answers,
+    oakfireAnswers,
+    personalOsAnswers,
     organizedAnswers: Object.fromEntries(
       Object.entries(session.answers).map(([questionId, answer]) => [questionId, answer.organizedAnswer]),
     ),
+    organizedOakfireAnswers: Object.fromEntries(
+      Object.entries(oakfireAnswers).map(([questionId, answer]) => [questionId, answer.organizedAnswer]),
+    ),
+    organizedPersonalOsAnswers: Object.fromEntries(
+      Object.entries(personalOsAnswers).map(([questionId, answer]) => [questionId, answer.organizedAnswer]),
+    ),
     generatedVisionDraft: session.generatedVisionDraft,
+    planningDraft: session.generatedVisionDraft,
     generatedVisionDraftUpdatedAt: session.generatedVisionDraftUpdatedAt,
     reviewFeedback: session.reviewFeedback,
     finalizedVision: session.finalizedVision,
+    oakfirePlanningBrief: planningSections,
+    oakfirePlanningBriefText: planningBriefText,
+    finalPlanningBrief: planningSections,
+    finalPlanningBriefText: planningBriefText,
+    personalOsBlueprint: buildFuturePersonalOSBlueprint(),
+    futureAppPrompts: {
+      oakfireFinalVision: aiPromptText(session),
+      oakfireWebsitePlan: websitePlanPromptText(session),
+      oakfireBrandIdentity: brandIdentityPromptText(session),
+      eighthFlameStrategy: personalOSStrategyPromptText(session),
+      codexFoundation: codexPersonalOSFoundationPromptText(session),
+    },
     finalizedAt: session.finalizedAt,
+    completedAt: session.completedAt,
     stage: session.stage,
   };
 }
@@ -517,10 +845,64 @@ export function finalVisionText(session: SessionState) {
   return sectionText(finalVisionSections(session), session.answers);
 }
 
-function promptFrame(session: SessionState, task: string) {
-  return `Context: Neil is helping Octavian turn Oakfire by Octavian into a real barbecue company vision. Brand palette: Charred Black #0E0D0B, Crown Gold #D6A43A, Blackened Oak Green #1B2D24, Bone Cream #F0E4D0, Smoked Iron #34302B, Ember Glow #7A2418 used sparingly. The tone should feel premium, masculine, warm, elite, smokehouse-inspired, timeless, and refined.
+export function futurePersonalOSBlueprintText() {
+  return `Future Personal OS Blueprint
 
-Preserve Octavian's original answers as source material. Use the organized answers, collaborative feedback, and final vision to create the requested output. Do not invent facts; mark unclear items as follow-up questions.
+This is source material for Octavian's separate future personal OS app, not the current intake/planning app.
+
+The future app is not just a vision page. It is Octavian's personal/business operating system, with Oakfire built into it as a major business module and a future AI concierge.
+
+${futurePersonalOSModules.map((module) => `- ${module.name}: ${module.description}`).join("\n")}
+- First Version Priorities: Start with the smallest set Octavian would actually use weekly.
+- Later Version Ideas: Add deeper AI, richer calculators, sync, dashboards, and advanced modules only after the foundation works.`;
+}
+
+export function futureAppNamingIdeasText() {
+  return `Future App Name Decision
+
+The final name should feel custom to Octavian, not like generic software.
+
+${futureAppNamingIdeas
+  .map((idea) => `- ${idea.name}\n  Meaning: ${idea.meaning}\n  Why it could fit: ${idea.fit}\n  Potential downside: ${idea.downside}`)
+  .join("\n")}`;
+}
+
+export function questionsBeforeFutureAppText() {
+  return `Questions to Ask Before Building the Future App
+
+${questionsBeforeFutureApp.map((question) => `- ${question}`).join("\n")}`;
+}
+
+export function sourceMaterialForFuturePersonalOSText(session: SessionState) {
+  const sections = finalVisionSections(session);
+  const openDecisions = sections.find((section) => section.id === "open-decisions");
+  return `Source Material for Future Personal OS
+
+This package is for building the separate future Octavian personal OS. It combines the Oakfire Planning Brief, future personal OS blueprint, naming direction, collaborative feedback, and open decisions.
+
+OAKFIRE PLANNING BRIEF
+${finalVisionText(session)}
+
+FUTURE PERSONAL OS BLUEPRINT
+${futurePersonalOSBlueprintText()}
+
+FUTURE APP NAME DECISION
+${futureAppNamingIdeasText()}
+
+COLLABORATIVE REVIEW FEEDBACK
+${reviewFeedbackText(session)}
+
+KEY OPEN DECISIONS
+${openDecisions ? openDecisions.body.map((item) => `- ${item}`).join("\n") : "- Needs follow-up."}
+
+QUESTIONS TO ASK BEFORE BUILDING
+${questionsBeforeFutureApp.map((question) => `- ${question}`).join("\n")}`;
+}
+
+function promptFrame(session: SessionState, task: string) {
+  return `Context: Neil is helping Octavian turn Oakfire by Octavian into a clear barbecue business planning brief and source package for a separate future personal OS app. Brand palette: Charred Black #0E0D0B, Crown Gold #D6A43A, Blackened Oak Green #1B2D24, Bone Cream #F0E4D0, Smoked Iron #34302B, Ember Glow #7A2418 used sparingly. The tone should feel premium, masculine, warm, elite, smokehouse-inspired, timeless, and refined.
+
+Preserve Octavian's original answers as source material. Use the organized answers, collaborative feedback, and Oakfire Planning Brief to create the requested output. Do not invent facts; mark unclear items as follow-up questions.
 
 ${task}
 
@@ -533,7 +915,7 @@ ${organizedAnswersText(session)}
 COLLABORATIVE REVIEW FEEDBACK
 ${reviewFeedbackText(session)}
 
-FINAL COMPANY VISION
+OAKFIRE PLANNING BRIEF
 ${finalVisionText(session)}`;
 }
 
@@ -548,7 +930,7 @@ export function aiPromptText(session: SessionState) {
 5. Website Plan
 6. Catering System Plan
 7. Content / YouTube Growth Plan
-8. AI Tools / Personal BBQ App Vision
+8. AI Tools / Future Personal OS Direction
 9. 30-Day Action Plan
 10. Future Build Roadmap
 11. Follow-Up Questions`,
@@ -587,16 +969,120 @@ export function brandIdentityPromptText(session: SessionState) {
 export function bbqAppPromptText(session: SessionState) {
   return promptFrame(
     session,
-    `Create a future personal BBQ app concept with:
-- App purpose
-- Core modules
-- AI concierge capabilities
-- Catering calculator
-- Content coach
-- Prep checklist
-- Customer follow-up
-- Weekly goals
-- Simple UX for a non-technical user`,
+    `Define Octavian's future personal/business OS using the Oakfire Planning Brief and Future Personal OS Intake answers as source material.
+
+Please provide:
+- Best app name options, including Eighth Flame, Aurelius, The Oakfire Codex, The Fire Ledger, Crown & Crucible, Octavian OS, Oakfire Command, and Blackened Oak.
+- A recommendation for the AI concierge role/name if useful.
+- A clear definition of what the future personal OS is and is not.
+- Core modules, separated into Oakfire business modules and personal modules.
+- Oakfire as the main business module.
+- Strain Library / Cannabis Explorer as one mature personal module only, not the app's identity.
+- The simplest first version Octavian would actually use.
+- What to avoid so the app does not become overcomplicated.
+- UX principles for Octavian as a non-technical user.
+- Premium, personal, masculine, helpful, easy-to-use product direction.
+- 30-day MVP plan and later-phase roadmap.`,
+  );
+}
+
+export function codexPersonalOSFoundationPromptText(session: SessionState) {
+  return promptFrame(
+    session,
+    `You are Codex. Build the foundation for a NEW separate app for Octavian's future personal OS. Do not modify the Oakfire Vision Intake & Planning app. Use the Oakfire Planning Brief as source material.
+
+Project name: octavian-personal-os
+App name: choose after reviewing the Future App Name Decision options
+Subtitle: Octavian's Personal OS
+AI Concierge: optional future module
+
+Purpose:
+Build a simple frontend-first personal/business operating system for Octavian. It should be mainly business-focused, but personal enough to feel built for him. Oakfire is the main business module, and the app should also support personal planning, weekly focus, notes, future AI help, and optional personal reference modules.
+
+Oakfire brand identity:
+- Charred Black: #0E0D0B
+- Crown Gold: #D6A43A
+- Blackened Oak Green: #1B2D24
+- Bone Cream: #F0E4D0
+- Smoked Iron: #34302B
+- Ember Glow: #7A2418, used sparingly
+Use the Oakfire logo direction and emblem feel as brand inspiration, but do not require this intake app's exact layout.
+
+Required first-version routes/pages:
+- Dashboard
+- Personal Dashboard
+- Oakfire Command
+- Brand Builder
+- Catering System
+- Content Engine
+- Growth Roadmap
+- AI Concierge
+- Strain Library / Cannabis Explorer
+- Finance & Planning
+- Health / Lifestyle
+- Notes & Favorites
+- Weekly Focus
+- Import Planning Brief
+- Settings / Data Backup
+
+Suggested modules:
+- Personal Dashboard
+- Oakfire Command
+- Brand Builder
+- Catering System
+- Content Engine
+- AI Concierge
+- Growth Roadmap
+- Strain Library / Cannabis Explorer
+- Notes & Favorites
+- Weekly Focus
+
+Requirements:
+- Build only the foundation first.
+- Do not overcomplicate the first version.
+- Use a simple frontend-first foundation.
+- Use localStorage or simple file storage for the first version.
+- Design for a non-technical user.
+- Make Oakfire the main business module, but keep the app broader than Oakfire.
+- Make it business-focused but personal.
+- Future AI integration is planned but not required at the foundation stage unless an API key is present.
+- Allow planning brief import/paste later so Neil can paste output from the intake app.
+- Treat Strain Library / Cannabis Explorer as a mature private personal module for strain research, favorites, notes, effects, and terpene learning. Do not make cannabis the core identity.
+- Create a clean, usable foundation with simple data structures, clear navigation, and polished Oakfire visual direction.
+
+Testing requirements:
+- App starts locally.
+- Dashboard loads with no saved data.
+- Each route/page renders without crashing.
+- Planning brief can be pasted/imported and remains after refresh.
+- Notes/favorites can be added, edited, and deleted.
+- Weekly Focus can save priorities and progress.
+- Backup/export works.
+- Mobile width remains usable.
+- No runtime errors remain.`,
+  );
+}
+
+export function personalOSStrategyPromptText(session: SessionState) {
+  return promptFrame(
+    session,
+    `Analyze Octavian's answers, the Oakfire Planning Brief, and the Future Personal OS Intake answers to define the best separate future app strategy.
+
+Please provide:
+- Best app name options, with reasoning and tradeoffs.
+- AI concierge role/personality recommendations if the first version includes one later.
+- App positioning: personal OS, Oakfire business command center, or a hybrid.
+- Best module map for Oakfire business modules.
+- Best module map for personal modules.
+- Module priorities for the first version.
+- What should be saved/editable long term.
+- What Octavian should use weekly.
+- How Oakfire business-building fits into Octavian's personal life and full-time work.
+- A mature approach to Strain Library / Cannabis Explorer as one personal module.
+- First MVP feature set.
+- 30-day build roadmap.
+- What should wait until later.
+- Risks or unclear source material Neil should clarify with Octavian.`,
   );
 }
 
