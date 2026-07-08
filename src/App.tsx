@@ -282,17 +282,37 @@ function App() {
         <Route path="/session" element={<SessionPage {...sessionApi} />} />
         <Route path="/review-answers" element={<ReviewAnswersPage {...sessionApi} />} />
         <Route path="/complete" element={<CompletePage {...sessionApi} />} />
-        <Route path="/generate" element={<GeneratePage {...sessionApi} />} />
-        <Route path="/review" element={<ReviewPage {...sessionApi} />} />
-        <Route path="/vision" element={<VisionPage {...sessionApi} />} />
-        <Route path="/present" element={<PresentPage {...sessionApi} />} />
-        <Route path="/export" element={<ExportPage {...sessionApi} />} />
-        <Route path="/import" element={<ImportPage {...sessionApi} />} />
+        <Route path="/generate" element={<Navigate to="/admin/generate" replace />} />
+        <Route path="/review" element={<Navigate to="/admin/review" replace />} />
+        <Route path="/vision" element={<Navigate to="/admin/vision" replace />} />
+        <Route path="/present" element={<Navigate to="/admin/present" replace />} />
+        <Route path="/export" element={<Navigate to="/admin/export" replace />} />
+        <Route path="/import" element={<Navigate to="/admin/import" replace />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/submissions/:id" element={<AdminSubmissionPage />} />
+        <Route path="/admin/generate" element={<GeneratePage {...sessionApi} />} />
+        <Route path="/admin/review" element={<ReviewPage {...sessionApi} />} />
+        <Route path="/admin/vision" element={<VisionPage {...sessionApi} />} />
+        <Route path="/admin/present" element={<PresentPage {...sessionApi} />} />
+        <Route path="/admin/export" element={<ExportPage {...sessionApi} />} />
+        <Route path="/admin/import" element={<ImportPage {...sessionApi} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
+  );
+}
+
+function PublicShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-5 sm:px-8 lg:px-10">
+      <header className="mb-6 flex items-center justify-center sm:justify-start">
+        <Link to="/" className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.2em] text-gold sm:text-sm">
+          <img className="h-12 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <span>Oakfire by Octavian</span>
+        </Link>
+      </header>
+      {children}
+    </main>
   );
 }
 
@@ -339,16 +359,16 @@ function Shell({
               <span className="status-pill">
                 Neil Planning Tools
               </span>
-              <Link className="nav-link" to="/generate">
+              <Link className="nav-link" to="/admin/generate">
                 Generate
               </Link>
-              <Link className="nav-link" to="/review">
+              <Link className="nav-link" to="/admin/review">
                 Draft Review
               </Link>
-              <Link className="nav-link" to="/vision">
+              <Link className="nav-link" to="/admin/vision">
                 Planning Brief
               </Link>
-              <Link className="nav-link" to="/export">
+              <Link className="nav-link" to="/admin/export">
                 Export
               </Link>
               <Link className="nav-link" to="/admin">
@@ -357,7 +377,7 @@ function Shell({
             </>
           )}
           <span className="status-pill">
-            Stage: {sessionStatus(session)}
+            Planning status: {sessionStatus(session)}
           </span>
           <span className="status-pill text-ash">
             Last saved: {formatLastSaved(session.lastSavedAt)}
@@ -366,7 +386,7 @@ function Shell({
             Saved on this device
           </span>
           <button className="quiet-button" onClick={handleClear}>
-            Clear Session
+            Reset Planning Draft
           </button>
         </nav>
       </header>
@@ -386,24 +406,6 @@ function HeroLogoEmblem() {
 }
 
 function StartPage(props: SessionProps) {
-  const creates = [
-    {
-      title: "Oakfire Planning Brief",
-      body: "A clear blueprint for the food, story, brand, catering, website, content, and business direction.",
-    },
-    {
-      title: "Oakfire x Legacy Sanctum Opportunity",
-      body: "A partnership path showing how Oakfire could become the food, hospitality, and community layer inside Legacy Sanctum.",
-    },
-    {
-      title: "Eighth Flame Blueprint",
-      body: "Source material for your future personal OS - built around business, lifestyle, goals, money, health, content, cannabis strain notes, and Orion.",
-    },
-    {
-      title: "Build Prompts for Neil",
-      body: "Your answers become the source Neil uses to build the next app, systems, website, and strategy.",
-    },
-  ];
   const guidance = [
     "Be honest.",
     "Skip anything you are unsure about.",
@@ -413,17 +415,17 @@ function StartPage(props: SessionProps) {
   ];
 
   return (
-    <Shell {...props}>
+    <PublicShell>
       <section className="relative -mx-5 -mt-5 overflow-hidden px-5 pb-12 pt-8 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(214,164,58,0.12),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(122,36,24,0.35),transparent_30%),radial-gradient(circle_at_14%_26%,rgba(27,45,36,0.72),transparent_34%),linear-gradient(180deg,rgba(14,13,11,0.38)_0%,rgba(14,13,11,0.94)_72%)]" />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 py-8 lg:min-h-[76vh] lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 py-8 lg:min-h-[74vh] lg:grid-cols-[0.95fr_1.05fr]">
           <div className="order-2 lg:order-1">
             <p className="mb-4 inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-black uppercase tracking-[0.2em] text-gold">
               Private Vision Intake
             </p>
             <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl lg:text-7xl">Oakfire Vision Intake & Planning</h1>
             <p className="mt-5 max-w-2xl text-xl leading-8 text-bone">
-              A private brand-building experience for Oakfire by Octavian.
+              A private intake built for Oakfire by Octavian.
             </p>
             <div className="mt-8 max-w-2xl rounded-lg border border-gold/25 bg-coal/60 p-5 shadow-oak backdrop-blur">
               <div className="mb-4 gold-divider" />
@@ -434,20 +436,25 @@ function StartPage(props: SessionProps) {
                   Now I want to take what I've learned from building my brand, websites, systems, AI tools, and business
                   plans - and use it to help you shape Oakfire into something real.
                 </p>
-                <p className="font-bold text-bone">This intake is not just a form.</p>
+                <p className="font-bold text-bone">This intake has two parts.</p>
                 <p>
-                  It is the starting point for your barbecue brand, the Oakfire x Legacy Sanctum opportunity, and the
-                  future personal OS I want to build for you: Eighth Flame, guided by Orion.
+                  Part 1 is about Oakfire: the food, the story, the brand, catering, content, website, and the Oakfire x
+                  Legacy Sanctum opportunity.
                 </p>
                 <p>
-                  Answer in your own words. Don't overthink it. The more honest you are, the better I can build around
-                  who you are, what you want, and where Oakfire can go.
+                  Part 2 is about Eighth Flame: the future personal OS I may build for you, guided by Orion. That app
+                  can support your business, lifestyle, goals, finances, health, content, cannabis strain notes, real
+                  estate work if relevant, and the tools that help you stay organized.
+                </p>
+                <p>
+                  No need to overthink it. Just answer honestly in your own words. The better your answers are, the
+                  better I can build the plan around you.
                 </p>
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link className="primary-button px-7 py-4" to="/session">
-                Start the Vision Intake
+                Start Intake
               </Link>
               <p className="max-w-md text-sm leading-6 text-ash">
                 Your answers save on this device while you work. When you submit, Neil will be able to review them.
@@ -461,19 +468,6 @@ function StartPage(props: SessionProps) {
       </section>
 
       <section className="mx-auto grid w-full max-w-6xl gap-10 py-10">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">Private vision session</p>
-          <h2 className="mt-2 text-3xl font-black text-bone sm:text-5xl">What This Experience Creates</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {creates.map((item) => (
-              <div key={item.title} className="premium-card p-5">
-                <h3 className="text-xl font-black text-bone">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-ash">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div>
           <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">The path</p>
           <h2 className="mt-2 text-3xl font-black text-bone sm:text-5xl">The Two-Part Journey</h2>
@@ -522,13 +516,13 @@ function StartPage(props: SessionProps) {
           </div>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link className="primary-button px-7 py-4" to="/session">
-              Start the Vision Intake
+              Start Intake
             </Link>
             <p className="text-sm leading-6 text-ash">Your draft saves as you go. Submit when you are finished.</p>
           </div>
         </div>
       </section>
-    </Shell>
+    </PublicShell>
   );
 }
 
@@ -553,19 +547,19 @@ function SessionPage({
   const [showPartIntro, setShowPartIntro] = useState(() => !searchParams.get("q"));
   const activeQuestions = activeIntake === "oakfire" ? flatQuestions : flatPersonalOsQuestions;
   const activeCategories = activeIntake === "oakfire" ? categories : personalOsCategories;
-  const activeLabel = activeIntake === "oakfire" ? "Part 1: Oakfire Vision" : "Part 2: Eighth Flame OS";
+  const activeLabel = activeIntake === "oakfire" ? "Part 1: Oakfire Vision Intake" : "Part 2: Eighth Flame Personal OS Intake";
   const activeIntro =
     activeIntake === "oakfire"
       ? {
           eyebrow: "Part 1",
-          title: "Part 1: Oakfire Vision",
-          body: "This section is about the barbecue company - the food, the story, the identity, the business model, the Legacy Sanctum opportunity, and the path Oakfire could take.",
+          title: "Part 1: Oakfire Vision Intake",
+          body: "This section is about the barbecue company: the story, food, brand, Legacy Sanctum opportunity, website, catering, content, and the direction Oakfire could grow.",
           button: "Begin Oakfire Vision",
         }
       : {
           eyebrow: "Part 2",
-          title: "Part 2: Eighth Flame",
-          body: "This section is about the future personal OS Neil may build for you. Eighth Flame is bigger than Oakfire. It can support your business, lifestyle, goals, finances, health, cannabis strain notes, real estate work if relevant, and your AI concierge Orion.",
+          title: "Part 2: Eighth Flame Personal OS Intake",
+          body: "This section is about the future personal OS Neil may build for you. Eighth Flame is bigger than Oakfire and can support business, lifestyle, finances, health, content, cannabis strain notes, real estate work if relevant, and Orion.",
           button: "Begin Eighth Flame Intake",
         };
   const total = activeQuestions.length;
@@ -674,26 +668,10 @@ function SessionPage({
   };
 
   return (
-    <Shell session={session} clearSession={clearSession}>
-      <section className="mb-6 rounded-lg border border-gold/20 bg-soot/70 p-4 shadow-oak">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Self-guided intake</p>
-            <p className="mt-2 text-sm leading-6 text-ash">
-              Your answers are saved on this device. Last saved: {formatLastSaved(session.lastSavedAt)}. If voice input
-              does not work, typing still works.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link className="secondary-button" to="/review-answers">
-              Review Answers
-            </Link>
-          </div>
-        </div>
-      </section>
+    <PublicShell>
       <section className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="rounded-lg oak-card p-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Answer Session</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Intake Progress</p>
           <div className="mt-4 grid gap-2">
             <button
               className={activeIntake === "oakfire" ? "primary-button w-full" : "secondary-button w-full"}
@@ -823,11 +801,8 @@ function SessionPage({
               Voice works best in Chrome/Safari with microphone access allowed. If it does not work, type the answer
               instead.
             </p>
-            <p className="mb-3 rounded-lg border border-gold/15 bg-coal/35 p-3 text-sm font-semibold text-bone">
-              Your original answer stays saved. Organized answers only help build the planning brief.
-            </p>
             <label className="text-sm font-semibold text-bone" htmlFor="original-answer">
-              Original answer
+              Your answer
             </label>
             <textarea
               id="original-answer"
@@ -836,15 +811,6 @@ function SessionPage({
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Octavian's answer goes here, in his own words..."
             />
-            <div className="mt-4 rounded-lg oak-panel p-4">
-              <p className="text-sm font-semibold text-gold">Prepared answer for planning brief</p>
-              <p className="mt-1 text-xs leading-5 text-ash">
-                This does not replace your original answer. It only helps Neil organize the planning brief.
-              </p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ash">
-                {answer?.organizedAnswer || "Not prepared yet. Prepared answers help create the planning brief and future app build source material."}
-              </p>
-            </div>
             <label className="mt-4 flex items-center gap-3 rounded-lg border border-gold/15 bg-coal/35 p-4 text-sm font-semibold text-bone">
               <input
                 className="h-5 w-5 accent-[#D6A43A]"
@@ -865,9 +831,6 @@ function SessionPage({
               <button className="primary-button" onClick={save}>
                 Save Answer
               </button>
-            <button className="secondary-button" onClick={organize}>
-                Prepare Answer for Planning Brief
-              </button>
               <button className="quiet-button" onClick={skip}>
                 Skip for Now
               </button>
@@ -885,7 +848,7 @@ function SessionPage({
           )}
         </article>
       </section>
-    </Shell>
+    </PublicShell>
   );
 }
 
@@ -930,7 +893,7 @@ function ReviewAnswersPage({ session, clearSession, completeIntake }: SessionPro
   };
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <PublicShell>
       <section className="mb-7 rounded-lg oak-card p-6 shadow-ember">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Review answers</p>
         <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Review your answers before finishing.</h1>
@@ -957,7 +920,7 @@ function ReviewAnswersPage({ session, clearSession, completeIntake }: SessionPro
 
       <AnswerReviewGroup title="Part 1: Oakfire Answers" part="oakfire" categoriesToShow={categories} session={session} />
       <AnswerReviewGroup title="Part 2: Eighth Flame Answers" part="eighth-flame" categoriesToShow={personalOsCategories} session={session} />
-    </Shell>
+    </PublicShell>
   );
 }
 
@@ -1072,9 +1035,6 @@ function AnswerReviewGroup({
                         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ash">
                           {answer?.originalAnswer.trim() || "No answer saved yet."}
                         </p>
-                        {answer?.organizedAnswer.trim() && (
-                          <p className="mt-2 text-xs leading-5 text-ash">Prepared for planning: {answer.organizedAnswer}</p>
-                        )}
                       </div>
                       <div className="flex shrink-0 flex-wrap gap-2">
                         <span className="rounded-full border border-gold/20 bg-soot/70 px-3 py-2 text-xs font-black uppercase tracking-[0.1em] text-gold">
@@ -1114,33 +1074,24 @@ function CompletePage({ session, clearSession }: SessionProps) {
   };
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <PublicShell>
       <section className="success-card mx-auto max-w-4xl rounded-lg oak-card p-6 text-center shadow-ember sm:p-8">
         <img className="mx-auto mb-5 w-28 object-contain sm:w-36" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Intake complete</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Your Oakfire intake is complete.</h1>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Your intake is complete.</h1>
         <div className="mx-auto mt-5 max-w-3xl space-y-4 text-lg leading-8 text-ash">
-          <p>Appreciate you taking the time to fill this out.</p>
+          <p>Appreciate you filling this out.</p>
           <p>
-            Your intake is complete. Your answers have been saved so Neil can review them.
+            Your answers have been saved so Neil can review them and build your Oakfire Planning Brief, the Oakfire x
+            Legacy Sanctum opportunity plan, and the source material for Eighth Flame.
           </p>
-          <p>
-            Neil can use your saved answers to build your Oakfire Planning Brief, the Oakfire x Legacy Sanctum
-            opportunity plan, and the source material for Eighth Flame.
-          </p>
-          <p>This is the first step toward turning the food, the story, and the vision into something real.</p>
+          <p>You do not need to do anything else right now unless Neil asks for follow-up details.</p>
         </div>
         {submissionId && (
           <p className="mx-auto mt-5 max-w-3xl rounded-lg border border-gold/20 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
             Backend confirmation code: {submissionId}
           </p>
         )}
-        <p className="mx-auto mt-5 max-w-3xl rounded-lg border border-gold/20 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
-          Your answers are also still saved on this device as a draft copy. This page does not send email or texts.
-        </p>
-        <p className="mt-3 text-sm text-ash">
-          Completed: {formatLastSaved(session.completedAt)}. Last saved: {formatLastSaved(session.lastSavedAt)}.
-        </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="premium-card p-4">
             <h2 className="text-lg font-black text-bone">Oakfire Vision submitted</h2>
@@ -1165,7 +1116,7 @@ function CompletePage({ session, clearSession }: SessionProps) {
           </button>
         </div>
       </section>
-    </Shell>
+    </PublicShell>
   );
 }
 
@@ -1217,7 +1168,7 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
       if (!window.confirm(message)) return;
     }
     generateDraft();
-    navigate("/review");
+    navigate("/admin/review");
   };
 
   return (
@@ -1249,7 +1200,7 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
                 Start with the answer session, save a few responses, then come back here to build the planning draft.
               </p>
               <Link className="secondary-button mt-4" to="/session">
-                Start Answer Session
+                Open Public Intake
               </Link>
             </div>
           )}
@@ -1364,7 +1315,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
   const handleFinalize = () => {
     finalizeVision();
     sessionStorage.setItem("oakfire-finalized-message", "Planning Brief finalized. The Oakfire source material is ready to review and export.");
-    navigate("/vision");
+    navigate("/admin/vision");
   };
 
   return (
@@ -1394,7 +1345,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link className="secondary-button" to="/present">
+          <Link className="secondary-button" to="/admin/present">
             Presentation Mode
           </Link>
           <button className="primary-button" onClick={handleFinalize}>
@@ -1409,7 +1360,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
           <p className="mt-2 text-sm leading-6 text-bone">
             Generate the first planning draft, then come back here to review the direction together.
           </p>
-          <Link className="secondary-button mt-4" to="/generate">
+          <Link className="secondary-button mt-4" to="/admin/generate">
             Go to Generate
           </Link>
         </div>
@@ -1583,13 +1534,13 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link className="secondary-button" to="/review">
+          <Link className="secondary-button" to="/admin/review">
             Return to Review
           </Link>
-          <Link className="secondary-button" to="/present">
+          <Link className="secondary-button" to="/admin/present">
             Presentation Mode
           </Link>
-          <Link className="primary-button" to="/export">
+          <Link className="primary-button" to="/admin/export">
             Export Planning Brief
           </Link>
         </div>
@@ -1597,7 +1548,7 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
 
       <div className="mb-6 grid gap-3 md:grid-cols-5">
         <Metric label="Questions answered" value={`${answeredCount}/${totalQuestionCount()}`} />
-        <Metric label="Session stage" value={sessionStatus(session)} />
+        <Metric label="Planning status" value={sessionStatus(session)} />
         <Metric label="Completion score" value={`${completionScore(answeredCount)}%`} />
         <Metric label="Skipped" value={`${skippedCount}`} />
         <Metric label="Follow-up flags" value={`${followUpCount}`} />
@@ -1617,8 +1568,8 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
           <p className="mt-2 text-sm leading-6 text-ash">
             Start the answer session first. Once Octavian saves answers, this page becomes the Oakfire planning brief.
           </p>
-          <Link className="secondary-button mt-4" to="/session">
-            Start Answer Session
+          <Link className="secondary-button mt-4" to="/admin/generate">
+            Open Public Intake
           </Link>
         </div>
       )}
@@ -1708,7 +1659,7 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
           >
             Download Full Session Backup (.json)
           </button>
-          <Link className="secondary-button" to="/import">
+          <Link className="secondary-button" to="/admin/import">
             Import Session Backup
           </Link>
         </div>
@@ -1722,8 +1673,8 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
           <p className="mt-2 text-sm leading-6 text-ash">
             Save at least one answer first, then come back here for copy-ready outputs and backups.
           </p>
-          <Link className="secondary-button mt-4" to="/session">
-            Start Answer Session
+          <Link className="secondary-button mt-4" to="/admin/generate">
+            Open Public Intake
           </Link>
         </div>
       )}
@@ -1773,7 +1724,7 @@ function ImportPage({ session, clearSession, importSession }: SessionProps) {
         if (!window.confirm("This will replace the current saved session on this device.")) return;
         importSession(parsed);
         setMessage("Session backup imported successfully.");
-        navigate(parsed.finalizedVision?.length || parsed.generatedVisionDraft?.length ? "/vision" : "/session");
+        navigate(parsed.finalizedVision?.length || parsed.generatedVisionDraft?.length ? "/admin/vision" : "/admin/generate");
       } catch {
         setMessage("Could not read that JSON backup file.");
       }
@@ -1819,6 +1770,18 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         <nav className="flex flex-wrap gap-2 text-sm">
           <Link className="nav-link" to="/admin">
             Submissions
+          </Link>
+          <Link className="nav-link" to="/admin/generate">
+            Generate Planning Outputs
+          </Link>
+          <Link className="nav-link" to="/admin/review">
+            Review Planning Draft
+          </Link>
+          <Link className="nav-link" to="/admin/vision">
+            Oakfire Planning Brief
+          </Link>
+          <Link className="nav-link" to="/admin/export">
+            Export Source Material
           </Link>
           <Link className="nav-link" to="/">
             Public Intake
@@ -2074,7 +2037,7 @@ function SessionControlCenter({
       if (!window.confirm(message)) return;
     }
     generateDraft();
-    navigate("/review");
+    navigate("/admin/review");
   };
 
   return (
@@ -2082,7 +2045,7 @@ function SessionControlCenter({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="grid gap-2 text-sm text-ash sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <p>
-            <span className="font-bold text-bone">Session stage:</span> {sessionStatus(session)}
+            <span className="font-bold text-bone">Planning status:</span> {sessionStatus(session)}
           </p>
           <p>
             <span className="font-bold text-bone">Last saved:</span> {formatLastSaved(session.lastSavedAt)}
@@ -2102,19 +2065,19 @@ function SessionControlCenter({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="secondary-button" to="/session">
-            Continue Answer Session
+            Open Public Intake
           </Link>
           <button className="secondary-button" onClick={updateDraft}>
             Generate / Update Planning Draft
           </button>
-          <Link className="secondary-button" to="/review">
-            Review Together
+          <Link className="secondary-button" to="/admin/review">
+            Review Planning Draft
           </Link>
-          <Link className="secondary-button" to="/vision">
+          <Link className="secondary-button" to="/admin/vision">
             Planning Brief
           </Link>
-          <Link className="primary-button" to="/export">
-            Export Session
+          <Link className="primary-button" to="/admin/export">
+            Export Source Material
           </Link>
         </div>
       </div>
@@ -2164,7 +2127,7 @@ function PresentPage({ session }: SessionProps) {
           </p>
           </div>
         </div>
-        <Link className="secondary-button" to="/vision">
+        <Link className="secondary-button" to="/admin/vision">
           Exit Presentation
         </Link>
       </div>
