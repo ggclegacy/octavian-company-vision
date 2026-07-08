@@ -170,6 +170,74 @@ export const categories: Category[] = [
     ],
   },
   {
+    id: "sanctum",
+    name: "Oakfire x Legacy Sanctum",
+    purpose:
+      "How Oakfire could become the food, hospitality, and community layer inside Legacy Sanctum.",
+    questions: [
+      {
+        id: "sanctum-exciting",
+        text: "When Neil brought up Oakfire being connected to Legacy Sanctum, what made the idea feel exciting to you?",
+        why: "This captures the first real emotional response to the partnership vision.",
+      },
+      {
+        id: "sanctum-unclear-before",
+        text: "Before this idea, what were you unsure about with the BBQ business?",
+        why: "This helps define what problem the partnership vision may solve.",
+      },
+      {
+        id: "sanctum-imagine",
+        text: "When you picture Oakfire inside or connected to Legacy Sanctum, what do you imagine?",
+        why: "This lets you describe your own version of the opportunity.",
+      },
+      {
+        id: "sanctum-starting-model",
+        text: "Which starting model feels most realistic first? Options could include private tasting night, monthly Oakfire night, preorder plate drops, catering pickup, event food, food truck outside, small onsite service later, or not sure yet.",
+        why: "This helps choose a first step that can be tested without overcommitting.",
+      },
+      {
+        id: "sanctum-food-fit",
+        text: "What kind of Oakfire food would fit Legacy Sanctum best? Examples could include brisket plates, ribs, smoked chicken, sliders, wings, loaded potatoes, sandwiches, sampler trays, premium tasting menu, sides, or sauces/rubs.",
+        why: "The food format should match the atmosphere, event model, and realistic prep needs.",
+      },
+      {
+        id: "sanctum-premium",
+        text: "What would make Oakfire at Legacy Sanctum feel premium and not random?",
+        why: "The experience needs to feel intentional, branded, and worth talking about.",
+      },
+      {
+        id: "sanctum-frequency",
+        text: "How often could you realistically support Oakfire events or plate drops while working full-time?",
+        why: "The model needs to fit your real life and capacity.",
+      },
+      {
+        id: "sanctum-operation-model",
+        text: "Would you rather cook offsite and bring food in, cook onsite if possible, use Legacy Sanctum as pickup/event space, or decide later?",
+        why: "This affects permits, equipment, workflow, and risk.",
+      },
+      {
+        id: "sanctum-needs",
+        text: "What equipment, prep space, storage, or serving setup would you need to make the first version work?",
+        why: "This helps identify practical needs before promising too much.",
+      },
+      {
+        id: "sanctum-first-test",
+        text: "What would be the easiest first test event? Examples could include private tasting night, grand-opening food, barber/BBQ night, game-day plates, member invite night, Oakfire sample night, or preorder pickup day.",
+        why: "A small first test can create feedback, confidence, and content without forcing the whole business to be figured out.",
+      },
+      {
+        id: "sanctum-30-day-success",
+        text: "What would success look like after the first 30 days of testing Oakfire with Legacy Sanctum? Examples could include plates sold, catering leads, event turnout, customer feedback, repeat interest, social content, revenue, or confidence in the direction.",
+        why: "Clear success metrics help decide whether to keep going, adjust, or grow the partnership.",
+      },
+      {
+        id: "sanctum-reputation",
+        text: "If Oakfire and Legacy Sanctum partnered together, what would you want people to say about the experience?",
+        why: "This defines the feeling and reputation of the partnership.",
+      },
+    ],
+  },
+  {
     id: "website",
     name: "Website & Digital Presence",
     purpose:
@@ -354,7 +422,7 @@ export const personalOsCategories: Category[] = [
   },
   {
     id: "os-oakfire-support",
-    name: "Oakfire Support Inside Future OS",
+    name: "Oakfire Support Inside Eighth Flame",
     purpose: "Oakfire will be the main business module inside the future app.",
     questions: [
       { id: "os-oakfire-first", text: "What part of building Oakfire would you want the app to help with first?", why: "This identifies the first useful Oakfire Command feature." },
@@ -414,7 +482,7 @@ export const personalOsCategories: Category[] = [
   },
   {
     id: "os-orion",
-    name: "AI Concierge",
+    name: "AI Concierge: Orion",
     purpose: "This section defines whether a future AI concierge belongs in the personal OS.",
     questions: [
       { id: "os-orion-ask", text: "What would you want to ask a future AI concierge most often?", why: "This defines common use cases." },

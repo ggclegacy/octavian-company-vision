@@ -4,13 +4,62 @@
 
 :root {
   color-scheme: dark;
+  --color-coal: #0e0d0b;
+  --color-night: #070706;
+  --color-soot: #14241d;
+  --color-oak: #1b2d24;
+  --color-smoke: #34302b;
+  --color-ember: #7a2418;
+  --color-ember-bright: #b94a2f;
+  --color-gold: #d6a43a;
+  --color-gold-bright: #edc86d;
+  --color-bone: #f0e4d0;
+  --color-ash: #c9bda9;
+  --color-iron: #8d867a;
+  --surface-glass: rgba(14, 13, 11, 0.72);
+  --surface-card: linear-gradient(145deg, rgba(21, 32, 26, 0.94), rgba(14, 13, 11, 0.86) 46%, rgba(52, 48, 43, 0.62));
+  --surface-panel: linear-gradient(145deg, rgba(52, 48, 43, 0.66), rgba(17, 24, 20, 0.86));
+  --surface-command: linear-gradient(135deg, rgba(27, 45, 36, 0.86), rgba(14, 13, 11, 0.92) 52%, rgba(122, 36, 24, 0.2));
+  --gradient-cinematic: radial-gradient(circle at 50% 12%, rgba(27, 45, 36, 0.82), transparent 33%),
+    radial-gradient(circle at 84% 18%, rgba(214, 164, 58, 0.12), transparent 22%),
+    radial-gradient(circle at 52% 112%, rgba(122, 36, 24, 0.36), transparent 33%),
+    linear-gradient(180deg, #0e0d0b 0%, #12110e 44%, #070706 100%);
+  --shadow-oak: 0 28px 90px rgba(0, 0, 0, 0.52);
+  --shadow-ember: 0 24px 82px rgba(214, 164, 58, 0.13), 0 0 44px rgba(122, 36, 24, 0.12);
+  --shadow-focus: 0 0 0 4px rgba(214, 164, 58, 0.22), 0 0 0 1px rgba(214, 164, 58, 0.5);
+  --radius-card: 0.75rem;
+  --radius-control: 0.55rem;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
   margin: 0;
-  background: #0e0d0b;
+  min-width: 320px;
+  background: var(--gradient-cinematic);
+  color: var(--color-bone);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.56) 78%),
+    linear-gradient(90deg, rgba(240, 228, 208, 0.026) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(240, 228, 208, 0.018) 1px, transparent 1px),
+    repeating-linear-gradient(135deg, rgba(240, 228, 208, 0.018) 0 1px, transparent 1px 8px);
+  background-size: auto, 84px 84px, 84px 84px, 10px 10px;
+  opacity: 0.72;
+}
+
+::selection {
+  background: rgba(214, 164, 58, 0.34);
+  color: var(--color-bone);
 }
 
 button,
@@ -18,16 +67,46 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+button,
+a,
+textarea,
+input {
+  outline-offset: 3px;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
+pre {
+  scrollbar-color: rgba(214, 164, 58, 0.48) rgba(14, 13, 11, 0.7);
+}
+
 @layer components {
+  .app-frame {
+    @apply mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-5 sm:px-8 lg:px-10;
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-inline: -0.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(214, 164, 58, 0.16);
+    border-radius: var(--radius-card);
+    background:
+      linear-gradient(135deg, rgba(14, 13, 11, 0.84), rgba(27, 45, 36, 0.64)),
+      rgba(14, 13, 11, 0.74);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(18px);
+  }
+
   .hero-emblem {
     position: relative;
     display: grid;
-    width: min(82vw, 382px);
+    width: min(78vw, 430px);
     aspect-ratio: 1;
     place-items: center;
     border-radius: 9999px;
@@ -158,31 +237,143 @@ button:disabled {
   }
 
   .primary-button {
-    @apply inline-flex items-center justify-center rounded-md border border-gold bg-gradient-to-b from-[#E2B957] to-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[0.12em] text-coal shadow-ember transition hover:-translate-y-0.5 hover:from-[#EDC86D] hover:to-[#D6A43A] focus:outline-none focus:ring-4 focus:ring-gold/30;
+    @apply inline-flex items-center justify-center rounded-md border border-gold bg-gradient-to-b from-[#F1D082] via-[#E2B957] to-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[0.12em] text-coal shadow-ember transition duration-200 hover:-translate-y-0.5 hover:from-[#F8DA91] hover:to-[#D6A43A] focus:outline-none focus:ring-4 focus:ring-gold/30;
+    box-shadow: 0 14px 34px rgba(214, 164, 58, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.42);
   }
 
   .secondary-button {
-    @apply inline-flex items-center justify-center rounded-md border border-gold/45 bg-soot/80 px-4 py-3 text-center text-sm font-bold text-bone transition hover:-translate-y-0.5 hover:border-gold hover:bg-smoke focus:outline-none focus:ring-4 focus:ring-gold/25;
+    @apply inline-flex items-center justify-center rounded-md border border-gold/40 bg-soot/80 px-4 py-3 text-center text-sm font-bold text-bone transition duration-200 hover:-translate-y-0.5 hover:border-gold hover:bg-smoke focus:outline-none focus:ring-4 focus:ring-gold/25;
+    box-shadow: inset 0 1px 0 rgba(240, 228, 208, 0.08);
   }
 
   .quiet-button {
-    @apply rounded-md border border-ember/45 bg-ember/10 px-3 py-2 text-sm font-semibold text-bone transition hover:border-ember hover:bg-ember/20 hover:text-white focus:outline-none focus:ring-4 focus:ring-ember/25;
+    @apply rounded-md border border-ember/45 bg-ember/10 px-3 py-2 text-sm font-semibold text-bone transition duration-200 hover:border-ember hover:bg-ember/20 hover:text-white focus:outline-none focus:ring-4 focus:ring-ember/25;
+  }
+
+  .ghost-button {
+    @apply inline-flex items-center justify-center rounded-md border border-bone/15 bg-white/5 px-4 py-3 text-center text-sm font-bold text-ash transition duration-200 hover:-translate-y-0.5 hover:border-gold/45 hover:bg-gold/10 hover:text-bone focus:outline-none focus:ring-4 focus:ring-gold/20;
+  }
+
+  .danger-button {
+    @apply inline-flex items-center justify-center rounded-md border border-ember/60 bg-ember/20 px-4 py-3 text-center text-sm font-bold text-bone transition duration-200 hover:-translate-y-0.5 hover:bg-ember/30 focus:outline-none focus:ring-4 focus:ring-ember/25;
   }
 
   .nav-link {
-    @apply rounded-md border border-gold/20 bg-coal/35 px-3 py-2 font-semibold text-bone transition hover:border-gold hover:bg-gold/10 focus:outline-none focus:ring-4 focus:ring-gold/25;
+    @apply rounded-md border border-gold/20 bg-coal/40 px-3 py-2 font-semibold text-bone transition duration-200 hover:border-gold hover:bg-gold/10 focus:outline-none focus:ring-4 focus:ring-gold/25;
   }
 
   .oak-card {
-    @apply rounded-lg border border-gold/20 bg-soot/85 shadow-oak;
+    border-radius: var(--radius-card);
+    border: 1px solid rgba(214, 164, 58, 0.2);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-oak);
+    backdrop-filter: blur(14px);
+  }
+
+  .premium-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-card);
+    border: 1px solid rgba(214, 164, 58, 0.22);
+    background:
+      linear-gradient(90deg, rgba(214, 164, 58, 0.52), transparent 38%, rgba(122, 36, 24, 0.26)) top / 100% 1px no-repeat,
+      linear-gradient(145deg, rgba(52, 48, 43, 0.84), rgba(27, 45, 36, 0.6), rgba(14, 13, 11, 0.88));
+    box-shadow: var(--shadow-oak);
+    transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+    animation: oak-rise 520ms ease-out both;
+  }
+
+  @media (hover: hover) {
+    .premium-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(214, 164, 58, 0.38);
+      box-shadow: 0 26px 84px rgba(0, 0, 0, 0.5), 0 0 34px rgba(214, 164, 58, 0.08);
+    }
   }
 
   .oak-panel {
-    @apply rounded-lg border border-gold/15 bg-smoke/70;
+    border-radius: var(--radius-card);
+    border: 1px solid rgba(214, 164, 58, 0.15);
+    background: var(--surface-panel);
+    box-shadow: inset 0 1px 0 rgba(240, 228, 208, 0.05);
   }
 
   .oak-input {
     @apply rounded-lg border border-gold/20 bg-smoke p-4 text-bone outline-none ring-gold/25 placeholder:text-iron focus:border-gold focus:ring-4;
+  }
+
+  .section-kicker {
+    @apply text-sm font-black uppercase tracking-[0.18em] text-gold;
+  }
+
+  .status-pill {
+    @apply inline-flex items-center rounded-full border px-3 py-2 text-xs font-black uppercase tracking-[0.1em];
+    border-color: rgba(214, 164, 58, 0.26);
+    background: rgba(14, 13, 11, 0.52);
+    color: var(--color-gold);
+  }
+
+  .gold-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(214, 164, 58, 0.54), transparent);
+  }
+
+  .answer-surface {
+    border-radius: var(--radius-card);
+    border: 1px solid rgba(214, 164, 58, 0.22);
+    background:
+      linear-gradient(145deg, rgba(14, 13, 11, 0.84), rgba(27, 45, 36, 0.42)),
+      rgba(14, 13, 11, 0.86);
+    box-shadow: inset 0 1px 0 rgba(240, 228, 208, 0.06), 0 18px 48px rgba(0, 0, 0, 0.24);
+  }
+
+  .answer-surface:focus {
+    border-color: rgba(214, 164, 58, 0.88);
+    box-shadow: var(--shadow-focus), inset 0 1px 0 rgba(240, 228, 208, 0.08);
+  }
+
+  .vision-opportunity {
+    border: 1px solid rgba(214, 164, 58, 0.34);
+    background:
+      radial-gradient(circle at 8% 8%, rgba(214, 164, 58, 0.15), transparent 26%),
+      radial-gradient(circle at 92% 96%, rgba(122, 36, 24, 0.34), transparent 32%),
+      var(--surface-command);
+    box-shadow: var(--shadow-ember);
+  }
+
+  .phase-card {
+    position: relative;
+    overflow: hidden;
+    border-left: 3px solid rgba(214, 164, 58, 0.72);
+  }
+
+  .admin-card {
+    background:
+      linear-gradient(90deg, rgba(214, 164, 58, 0.28), transparent 42%) top / 100% 1px no-repeat,
+      var(--surface-command);
+  }
+
+  .output-card pre,
+  .export-output pre {
+    border: 1px solid rgba(214, 164, 58, 0.12);
+    background:
+      linear-gradient(180deg, rgba(7, 7, 6, 0.72), rgba(14, 13, 11, 0.92)),
+      rgba(14, 13, 11, 0.9);
+  }
+
+  .success-card {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(214, 164, 58, 0.18), transparent 28%),
+      radial-gradient(circle at 50% 110%, rgba(27, 45, 36, 0.68), transparent 42%),
+      var(--surface-card);
+  }
+
+  textarea:focus-visible,
+  input:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid rgba(214, 164, 58, 0.72);
+    outline-offset: 3px;
   }
 }
 
@@ -252,13 +443,26 @@ button:disabled {
   }
 }
 
+@keyframes oak-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-emblem,
   .hero-emblem::before,
   .hero-emblem::after,
   .hero-emblem-core::before,
   .hero-emblem-core::after,
-  .hero-emblem-logo {
+  .hero-emblem-logo,
+  .premium-card {
     animation: none;
+    transition: none;
   }
 }

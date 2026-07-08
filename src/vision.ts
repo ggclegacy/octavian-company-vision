@@ -20,7 +20,12 @@ const futurePersonalOSModules = [
   },
   {
     name: "Oakfire Command",
-    description: "Brand vision, business direction, website plan, catering path, and company roadmap.",
+    description: "Brand vision, business direction, website plan, catering path, Oakfire x Sanctum partnership planning, and company roadmap.",
+  },
+  {
+    name: "Oakfire x Sanctum",
+    description:
+      "Event ideas, plate drop planning, tasting night checklists, partnership roadmap, catering lead tracking, content capture checklist, and 30-day test metrics for the Legacy Sanctum opportunity.",
   },
   {
     name: "Brand Builder",
@@ -239,6 +244,40 @@ const sectionMap = [
     strategicRead: "The smartest path is the one that fits current capacity while building toward the bigger dream.",
   },
   {
+    id: "oakfire-legacy-sanctum-opportunity",
+    title: "Oakfire x Legacy Sanctum Opportunity",
+    sourceQuestionIds: [
+      "sanctum-exciting",
+      "sanctum-unclear-before",
+      "sanctum-imagine",
+      "sanctum-starting-model",
+      "sanctum-food-fit",
+      "sanctum-premium",
+      "sanctum-frequency",
+      "sanctum-operation-model",
+      "sanctum-needs",
+      "sanctum-first-test",
+      "sanctum-30-day-success",
+      "sanctum-reputation",
+    ],
+    lines: [
+      ["Why the idea excites Octavian", "sanctum-exciting"],
+      ["Uncertainty this may solve", "sanctum-unclear-before"],
+      ["Partnership picture", "sanctum-imagine"],
+      ["Best first model", "sanctum-starting-model"],
+      ["Food format ideas", "sanctum-food-fit"],
+      ["Premium experience factors", "sanctum-premium"],
+      ["Realistic event / plate drop rhythm", "sanctum-frequency"],
+      ["Operating model", "sanctum-operation-model"],
+      ["Equipment, prep, storage, or serving needs", "sanctum-needs"],
+      ["First test event", "sanctum-first-test"],
+      ["30-day success metrics", "sanctum-30-day-success"],
+      ["Partnership reputation", "sanctum-reputation"],
+    ],
+    strategicRead:
+      "Oakfire x Legacy Sanctum should be framed as a lower-risk path for Oakfire to test demand, create content, gather feedback, and build a physical brand presence as the food, hospitality, and community-experience layer inside Legacy Sanctum.",
+  },
+  {
     id: "website-plan",
     title: "Website Direction",
     sourceQuestionIds: ["web-job", "web-goal", "web-next-step", "web-social", "web-success"],
@@ -318,6 +357,13 @@ export function organizeAnswerText(questionText: string, originalAnswer: string)
     ["next 1-2 years", "The one-to-two-year direction is"],
     ["long-term dream", "The long-term vision is"],
     ["which paths interest", "The business paths worth exploring are"],
+    ["legacy sanctum", "The Oakfire x Legacy Sanctum opportunity signal is"],
+    ["connected to legacy sanctum", "The Oakfire x Legacy Sanctum opportunity signal is"],
+    ["inside or connected to legacy sanctum", "Octavian imagines Oakfire x Legacy Sanctum as"],
+    ["starting model", "The most realistic Oakfire x Legacy Sanctum starting model is"],
+    ["what kind of oakfire food", "The food format that may fit Legacy Sanctum best is"],
+    ["feel premium and not random", "The partnership should feel premium by"],
+    ["first test event", "The easiest first Oakfire x Legacy Sanctum test event is"],
     ["website help", "The website's job should be to"],
     ["main goal", "The primary website goal should be"],
     ["types of events", "The catering direction should focus on"],
@@ -880,6 +926,8 @@ export function sourceMaterialForFuturePersonalOSText(session: SessionState) {
 
 This package is for building the separate future Octavian personal OS. It combines the Oakfire Planning Brief, future personal OS blueprint, naming direction, collaborative feedback, and open decisions.
 
+Important partnership concept: Oakfire x Legacy Sanctum should be treated as a possible business path where Oakfire becomes the food, hospitality, and community-experience layer inside Legacy Sanctum through private tastings, member BBQ nights, preorder plate drops, catering pickup, launch events, grooming + BBQ experiences, content creation, and phased demand testing.
+
 OAKFIRE PLANNING BRIEF
 ${finalVisionText(session)}
 
@@ -901,6 +949,8 @@ ${questionsBeforeFutureApp.map((question) => `- ${question}`).join("\n")}`;
 
 function promptFrame(session: SessionState, task: string) {
   return `Context: Neil is helping Octavian turn Oakfire by Octavian into a clear barbecue business planning brief and source package for a separate future personal OS app. Brand palette: Charred Black #0E0D0B, Crown Gold #D6A43A, Blackened Oak Green #1B2D24, Bone Cream #F0E4D0, Smoked Iron #34302B, Ember Glow #7A2418 used sparingly. The tone should feel premium, masculine, warm, elite, smokehouse-inspired, timeless, and refined.
+
+Important business concept: Oakfire x Legacy Sanctum is not BBQ randomly inside a barbershop. Frame it as Oakfire becoming the food, hospitality, and community-experience layer inside Legacy Sanctum, a future men's grooming, wellness, confidence, community, and private experience space. Include the event-based model, phased growth path, and why this partnership could help Oakfire find direction with lower risk than jumping straight into a food truck or restaurant.
 
 Preserve Octavian's original answers as source material. Use the organized answers, collaborative feedback, and Oakfire Planning Brief to create the requested output. Do not invent facts; mark unclear items as follow-up questions.
 
@@ -928,12 +978,20 @@ export function aiPromptText(session: SessionState) {
 3. Business Name Direction
 4. Visual Brand Direction
 5. Website Plan
-6. Catering System Plan
-7. Content / YouTube Growth Plan
-8. AI Tools / Future Personal OS Direction
-9. 30-Day Action Plan
-10. Future Build Roadmap
-11. Follow-Up Questions`,
+6. Oakfire x Legacy Sanctum Partnership Opportunity
+7. Catering System Plan
+8. Content / YouTube Growth Plan
+9. AI Tools / Future Personal OS Direction
+10. 30-Day Action Plan
+11. Future Build Roadmap
+12. Follow-Up Questions
+
+For the Oakfire x Legacy Sanctum section, explicitly include:
+- Why the idea excites Octavian
+- What uncertainty it solves
+- The event-based starting model
+- The phased growth path
+- Why this partnership could help Oakfire find direction`,
   );
 }
 
@@ -1012,6 +1070,7 @@ Required first-version routes/pages:
 - Dashboard
 - Personal Dashboard
 - Oakfire Command
+- Oakfire x Sanctum
 - Brand Builder
 - Catering System
 - Content Engine
@@ -1028,6 +1087,7 @@ Required first-version routes/pages:
 Suggested modules:
 - Personal Dashboard
 - Oakfire Command
+- Oakfire x Sanctum
 - Brand Builder
 - Catering System
 - Content Engine
@@ -1044,6 +1104,7 @@ Requirements:
 - Use localStorage or simple file storage for the first version.
 - Design for a non-technical user.
 - Make Oakfire the main business module, but keep the app broader than Oakfire.
+- Include Oakfire x Sanctum as a business module or submodule inside Oakfire Command. It should support event ideas, plate drop planning, tasting night checklists, partnership roadmap, catering lead tracking, content capture checklist, and 30-day test metrics.
 - Make it business-focused but personal.
 - Future AI integration is planned but not required at the foundation stage unless an API key is present.
 - Allow planning brief import/paste later so Neil can paste output from the intake app.
@@ -1073,6 +1134,7 @@ Please provide:
 - AI concierge role/personality recommendations if the first version includes one later.
 - App positioning: personal OS, Oakfire business command center, or a hybrid.
 - Best module map for Oakfire business modules.
+- How Oakfire x Sanctum should work as a business module or Oakfire Command submodule.
 - Best module map for personal modules.
 - Module priorities for the first version.
 - What should be saved/editable long term.

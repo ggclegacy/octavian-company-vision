@@ -1,16 +1,68 @@
 # Oakfire Vision Intake & Planning
 
-A Replit-ready Vite, React, TypeScript, and Tailwind CSS app for Neil to use with Octavian during the Oakfire by Octavian intake and planning session.
+Oakfire Vision Intake & Planning is a Replit-ready React, TypeScript, Tailwind, and Express app for collecting Octavian's intake answers and turning them into planning source material for Neil.
 
-This is intake and planning only. It captures Octavian's original answers, preserves his words, organizes the Oakfire business vision, supports Neil + Octavian review, creates an Oakfire Planning Brief, and exports source material/prompts for building a separate future personal OS later.
+This is not the final Eighth Flame app. Eighth Flame will be a future separate personal OS for Octavian, guided by Orion.
 
-The future personal OS will be a separate app. Oakfire should be the main business module inside it, but the future app can also include personal planning, content, goals, finance, lifestyle, notes, weekly planning, and optional private reference modules. Names such as Eighth Flame, Aurelius, and Octavian OS remain options to review.
+## Two Sides
 
-## Two-Part Intake
+- **Octavian's public intake side:** Octavian completes Part 1 and Part 2, reviews his answers, and submits the intake.
+- **Neil's admin/planning side:** Neil opens `/admin` to review saved submissions, generate planning outputs, copy prompts, and download source material.
 
-Part 1: **Oakfire Vision Intake** captures the barbecue company vision: story, food identity, business direction, website needs, catering goals, content strategy, and Oakfire roadmap.
+There is no authentication yet, so do not share `/admin` publicly.
 
-Part 2: **Future Personal OS Intake** captures what Octavian wants from his future personal OS: business tools, lifestyle support, finance tracking, health goals, cannabis strain library, real estate support, AI concierge ideas, and weekly planning.
+## Public Intake Flow
+
+1. Welcome page.
+2. Part 1: Oakfire Vision Intake.
+3. Part 2: Eighth Flame Personal OS Intake.
+4. Review Answers.
+5. Submit.
+6. Completion screen.
+
+Draft answers autosave in localStorage before submit. Final submit saves to backend file storage.
+
+## Oakfire x Legacy Sanctum
+
+Part 1 includes **Oakfire x Legacy Sanctum** after Business Model & Goals and before Website & Digital Presence.
+
+This section teaches the partnership concept before asking questions. It frames Oakfire as the food, hospitality, and community-experience layer inside Legacy Sanctum, not random BBQ inside a barbershop.
+
+The planning outputs summarize the opportunity, including first event models, food formats, premium experience factors, operating needs, 30-day success metrics, and partnership vision.
+
+## Backend Storage
+
+The Express server provides:
+
+- `GET /api/health`
+- `POST /api/submissions`
+- `GET /api/submissions`
+- `GET /api/submissions/:id`
+- `POST /api/submissions/:id/generate`
+
+Submissions are saved to `data/submissions.json`. The server creates the file if missing and safely resets an empty or malformed file instead of crashing.
+
+This is file storage only for now. There is no auth yet, no email yet, and no database yet. A future upgrade could add database storage, auth, email notifications, and richer admin permissions.
+
+## Neil Admin
+
+Open `/admin` after a submission is completed.
+
+Admin includes:
+
+- Submission list
+- Submission detail
+- Raw answers
+- Organized answers
+- Skipped and needs-follow-up status inside the answer exports
+- Oakfire Planning Brief
+- Eighth Flame Personal OS Blueprint
+- Oakfire x Legacy Sanctum Opportunity
+- Source Material for Future Eighth Flame App
+- AI prompts
+- Codex prompt for the future Eighth Flame foundation
+- Copy and download tools
+- Full Submission JSON download
 
 ## Run Locally
 
@@ -19,79 +71,33 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite.
+`npm run dev` starts the Express backend and Vite-powered frontend together. API routes are available in development at the same origin.
 
 Production check:
 
 ```bash
 npm run build
-npm run preview
+npm run start
 ```
+
+`npm run start` runs the Express server, serves API routes, and serves the built frontend from `dist`.
+
+## Full Workflow Test
+
+1. Open the public app and confirm the Oakfire logo loads.
+2. Start the intake, answer at least one Oakfire question, one Oakfire x Legacy Sanctum question, and one Eighth Flame question.
+3. Refresh the page and confirm draft answers restore from localStorage.
+4. Review answers, submit, and confirm the completion screen appears.
+5. Open `/admin`, confirm the submission appears, and open its detail page.
+6. Click Generate / Refresh Planning Outputs.
+7. Confirm the Oakfire Planning Brief, Oakfire x Legacy Sanctum Opportunity, Eighth Flame Blueprint, source material, AI prompts, Codex prompt, and Full Submission JSON are available for copy/download.
+8. Stop and restart the server, reopen `/admin`, and confirm the submission persists.
+9. Run `npm run build` and `npm run start`, then refresh `/`, `/admin`, and `/admin/submissions/:id`.
 
 ## Replit
 
-The `.replit` file runs the app on port `3000`:
+The `.replit` file builds the app and starts the Express server. React routes such as `/admin` and `/admin/submissions/:id` work on refresh after build because Express falls back to `dist/index.html`.
 
-```bash
-PORT=3000 npm run dev
-```
+## Future App Notes
 
-This is a frontend-only localStorage app. There is no backend, database, auth, payment system, or AI API yet.
-
-## Session Flow
-
-1. Start at `/` and click **Start Answer Session**.
-2. In `/session`, Octavian answers questions in his own words by typing or voice when supported.
-3. Original answers are saved separately from organized answers.
-4. Use **Organize Answer for Planning Brief** to create a deterministic planning version without replacing the original answer.
-5. Use **Skip for Now** or **Needs follow-up** when a question is not ready.
-6. Open `/generate` to generate or update the combined planning draft.
-7. Open `/review` to add Neil + Octavian collaborative feedback by section.
-8. Finalize the Oakfire Planning Brief at `/vision`.
-9. Use `/present` for TV/laptop mirroring.
-10. Use `/export` to copy prompts, download text files, and save a full session backup.
-
-The working pages include a compact Session Control Center with stage, last saved time, question progress, category progress, next recommended action, and quick links.
-
-## Future Personal OS Planning Outputs
-
-Exports include:
-
-- Original Answers
-- Organized Answers
-- Collaborative Review Feedback
-- Oakfire Planning Brief
-- Future Personal OS Blueprint
-- Future App Name Decision
-- Questions to Ask Before Building Next App
-- Source Material for Future Personal OS
-- AI Prompt for Final Vision Document
-- AI Prompt for Website Plan
-- AI Prompt for Brand Naming / Identity
-- AI Prompt for Future Personal OS Strategy
-- Codex Prompt for Future Personal OS App Foundation
-- Full Session Backup
-
-The Codex foundation prompt is designed for the separate future personal OS app. It includes planned modules such as Personal Dashboard, Oakfire Command, Brand Builder, Catering System, Content Engine, Growth Roadmap, AI Concierge, Strain Library / Cannabis Explorer, Notes & Favorites, and Weekly Focus.
-
-The Source Material export combines the Oakfire Planning Brief, Future Personal OS Blueprint, collaborative review feedback, open decisions, and smart questions to answer before Neil starts building the separate future app.
-
-To use the generated Codex prompt later, open `/export`, copy **Codex Prompt for Future Personal OS App Foundation**, and paste it into a new Codex session for a separate project. That future project should be built separately from this intake/planning app.
-
-## Voice Input
-
-Voice input uses browser `SpeechRecognition` or `webkitSpeechRecognition` when available. Chrome and Safari are the best candidates. If voice is unsupported, blocked, or fails, typing always works and typed text is preserved.
-
-## Backup And Export
-
-Use **Download Full Session Backup (.json)** on `/export` before clearing the session or moving devices. The backup includes session IDs, timestamps, original answers, organized answers, skipped/follow-up flags, generated draft, review feedback, and the finalized planning brief.
-
-Use `/import` to restore a backup JSON. Importing validates the basic session shape and asks for confirmation before replacing the local saved session.
-
-## Future Phases
-
-- Real AI polishing
-- Backend session saving
-- Phone/laptop live sync
-- PDF export
-- Separate Octavian personal OS foundation
+Eighth Flame is the future separate app. Orion is the future AI concierge. The Codex prompt output gives Neil a starting prompt for that later project, but this repo should remain the Oakfire Vision Intake & Planning app.

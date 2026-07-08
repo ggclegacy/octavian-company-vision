@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { categories, flatPersonalOsQuestions, flatQuestions, personalOsCategories, type Category } from "./data";
 import { formatLastSaved, type ReviewFeedback, SessionState, useSession } from "./storage";
@@ -57,6 +57,120 @@ type SpeechRecognitionEvent = {
 };
 
 type SessionProps = ReturnType<typeof useSession>;
+type PlanningOutputs = ReturnType<typeof buildPlanningOutputs>;
+type SubmissionSummary = {
+  id: string;
+  submitterName: string;
+  status?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string;
+  answeredCount: number;
+  oakfireAnswerCount?: number;
+  personalOsAnswerCount?: number;
+  hasPlanningOutputs?: boolean;
+};
+type StoredSubmission = SubmissionSummary & {
+  session?: SessionState;
+  rawSessionBackup?: SessionState;
+  oakfireAnswers?: SessionState["answers"];
+  personalOsAnswers?: SessionState["answers"];
+  planningOutputs?: PlanningOutputs;
+  skippedQuestions?: Array<{ questionId: string; questionText: string; skippedAt?: string }>;
+  needsFollowUpQuestions?: Array<{ questionId: string; questionText: string }>;
+};
+
+async function apiJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers || {}),
+    },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Something went wrong.");
+  return data as T;
+}
+
+function buildPlanningOutputs(session: SessionState) {
+  const sections = finalVisionSections(session);
+  const sanctumSection = sections.find((section) => section.id === "oakfire-legacy-sanctum-opportunity");
+  return {
+    generatedAt: new Date().toISOString(),
+    originalAnswers: originalAnswersText(session),
+    originalOakfireAnswers: originalOakfireAnswersText(session),
+    originalPersonalOsAnswers: originalPersonalOsAnswersText(session),
+    organizedAnswers: organizedAnswersText(session),
+    organizedOakfireAnswers: organizedOakfireAnswersText(session),
+    organizedPersonalOsAnswers: organizedPersonalOsAnswersText(session),
+    skippedAndFollowUp: [
+      "SKIPPED QUESTIONS",
+      ...Object.values(session.answers)
+        .filter((answer) => answer.skippedAt)
+        .map((answer) => `- ${answer.questionText}: skipped at ${answer.skippedAt}`),
+      "",
+      "NEEDS FOLLOW-UP",
+      ...Object.values(session.answers)
+        .filter((answer) => answer.followUpNeeded)
+        .map((answer) => `- ${answer.questionText}`),
+    ].join("\n") || "Needs follow-up.",
+    oakfirePlanningBrief: finalVisionText(session),
+    eighthFlameBlueprint: futurePersonalOSBlueprintText(),
+    oakfireLegacySanctumOpportunity: sanctumSection
+      ? `${sanctumSection.title}\n${sanctumSection.body.map((line) => `- ${line}`).join("\n")}`
+      : "Oakfire x Legacy Sanctum Opportunity\n- Needs follow-up.",
+    sourceMaterialForFutureEighthFlameApp: sourceMaterialForFuturePersonalOSText(session),
+    prompts: {
+      oakfireFinalVision: aiPromptText(session),
+      oakfireWebsitePlan: websitePlanPromptText(session),
+      oakfireBrandIdentity: brandIdentityPromptText(session),
+      eighthFlameStrategy: personalOSStrategyPromptText(session),
+      codexFoundation: codexPersonalOSFoundationPromptText(session),
+    },
+    fullSubmissionJson: "",
+  };
+}
+
+function fallbackSubmissionSession(submission: StoredSubmission): SessionState {
+  const timestamp = submission.completedAt || submission.updatedAt || submission.createdAt || new Date().toISOString();
+  return {
+    sessionId: submission.id || `submission-${Date.now()}`,
+    createdAt: submission.createdAt || timestamp,
+    updatedAt: submission.updatedAt || timestamp,
+    stage: "Completed",
+    currentQuestionIndex: 0,
+    answers: {
+      ...(submission.oakfireAnswers || {}),
+      ...(submission.personalOsAnswers || {}),
+    },
+    generatedVisionDraft: [],
+    generatedVisionDraftUpdatedAt: null,
+    reviewFeedback: {},
+    finalizedVision: [],
+    finalizedAt: null,
+    completedAt: submission.completedAt || timestamp,
+    lastSavedAt: submission.updatedAt || timestamp,
+  };
+}
+
+function storedSubmissionSession(submission: StoredSubmission | null) {
+  if (!submission) return null;
+  return submission.session || submission.rawSessionBackup || fallbackSubmissionSession(submission);
+}
+
+function planningOutputsForSubmission(submission: StoredSubmission, session: SessionState) {
+  const computed = buildPlanningOutputs(session);
+  const saved = submission.planningOutputs;
+  return {
+    ...computed,
+    ...(saved || {}),
+    prompts: {
+      ...computed.prompts,
+      ...(saved?.prompts || {}),
+    },
+  };
+}
 
 function markerClass(value: string) {
   if (value.includes("Strong")) return "border-gold/55 bg-gold/15 text-bone";
@@ -108,6 +222,38 @@ function isEighthFlameSection(section: VisionSection) {
   return section.id === "future-personal-os-blueprint" || section.id.startsWith("eighth-flame-");
 }
 
+const sanctumWhyPoints = [
+  "Shared audience: men who care about confidence, lifestyle, food, culture, and community.",
+  "Physical brand presence: Oakfire gets a place to be discovered without needing its own restaurant immediately.",
+  "Lower-risk testing: test menus, pricing, demand, and customer feedback before investing heavily.",
+  "Content engine: every tasting, cook, event, and plate drop creates content.",
+  "Premium experience: BBQ becomes part of the Legacy Sanctum atmosphere, not just food on the side.",
+  "Partnership leverage: Neil brings brand, systems, website, AI tools, marketing, and space vision; Octavian brings food, craft, story, and the Oakfire product.",
+];
+
+const sanctumGrowthPhases = [
+  {
+    title: "Phase 1: Private Oakfire Tasting Night",
+    body: "Small invite-only tasting to test food, presentation, feedback, and content.",
+  },
+  {
+    title: "Phase 2: Monthly Oakfire Night",
+    body: "Recurring BBQ/grooming/community event connected to Legacy Sanctum.",
+  },
+  {
+    title: "Phase 3: Preorder Plate Drops",
+    body: "Limited plate drops by preorder only, using demand before cooking.",
+  },
+  {
+    title: "Phase 4: Catering & Pickup Hub",
+    body: "Legacy Sanctum helps Oakfire collect catering leads and serve as a polished brand touchpoint.",
+  },
+  {
+    title: "Phase 5: Permanent Oakfire Presence",
+    body: "Only after demand is proven, explore a stronger onsite food setup, food truck connection, or dedicated Oakfire space.",
+  },
+];
+
 function categoryProgress(category: Category, session: SessionState) {
   const answered = category.questions.filter((question) => session.answers[question.id]?.originalAnswer.trim()).length;
   const flagged = category.questions.some((question) => {
@@ -142,6 +288,8 @@ function App() {
         <Route path="/present" element={<PresentPage {...sessionApi} />} />
         <Route path="/export" element={<ExportPage {...sessionApi} />} />
         <Route path="/import" element={<ImportPage {...sessionApi} />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/submissions/:id" element={<AdminSubmissionPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
@@ -152,10 +300,12 @@ function Shell({
   children,
   session,
   clearSession,
+  showPlanningTools = false,
 }: {
   children: React.ReactNode;
   session: SessionState;
   clearSession: () => void;
+  showPlanningTools?: boolean;
 }) {
   const handleClear = () => {
     if (window.confirm("This will erase the saved vision session from this device. Continue?")) {
@@ -164,8 +314,8 @@ function Shell({
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-5 sm:px-8 lg:px-10">
-      <header className="mb-8 flex flex-col gap-4 border-b border-gold/20 pb-5 xl:flex-row xl:items-center xl:justify-between">
+    <main className="app-frame">
+      <header className="app-header flex flex-col gap-4 p-4 xl:flex-row xl:items-center xl:justify-between">
         <Link to="/" className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.18em] text-gold">
           <img className="h-11 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
           <span>Oakfire by Octavian</span>
@@ -180,32 +330,39 @@ function Shell({
           <Link className="nav-link" to="/review-answers">
             Review Answers
           </Link>
-          <Link className="nav-link" to="/complete">
-            Complete
-          </Link>
-          <span className="mx-1 hidden h-8 border-l border-gold/20 sm:block" />
-          <span className="rounded-full border border-gold/20 bg-soot/50 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-gold">
-            Neil Planning Tools
-          </span>
-          <Link className="nav-link" to="/generate">
-            Generate
-          </Link>
-          <Link className="nav-link" to="/review">
-            Draft Review
-          </Link>
-          <Link className="nav-link" to="/vision">
-            Planning Brief
-          </Link>
-          <Link className="nav-link" to="/export">
-            Export
-          </Link>
-          <span className="rounded-full border border-gold/20 bg-soot/60 px-3 py-2 font-semibold text-bone">
+          {showPlanningTools && (
+            <>
+              <Link className="nav-link" to="/complete">
+                Complete
+              </Link>
+              <span className="mx-1 hidden h-8 border-l border-gold/20 sm:block" />
+              <span className="status-pill">
+                Neil Planning Tools
+              </span>
+              <Link className="nav-link" to="/generate">
+                Generate
+              </Link>
+              <Link className="nav-link" to="/review">
+                Draft Review
+              </Link>
+              <Link className="nav-link" to="/vision">
+                Planning Brief
+              </Link>
+              <Link className="nav-link" to="/export">
+                Export
+              </Link>
+              <Link className="nav-link" to="/admin">
+                Admin
+              </Link>
+            </>
+          )}
+          <span className="status-pill">
             Stage: {sessionStatus(session)}
           </span>
-          <span className="rounded-full border border-gold/20 bg-coal/35 px-3 py-2 text-ash">
+          <span className="status-pill text-ash">
             Last saved: {formatLastSaved(session.lastSavedAt)}
           </span>
-          <span className="rounded-full border border-gold/20 bg-coal/35 px-3 py-2 text-ash">
+          <span className="status-pill text-ash">
             Saved on this device
           </span>
           <button className="quiet-button" onClick={handleClear}>
@@ -229,95 +386,145 @@ function HeroLogoEmblem() {
 }
 
 function StartPage(props: SessionProps) {
-  const steps = [
-    "Answer the Oakfire business questions.",
-    "Answer the future personal OS questions.",
-    "Review your answers.",
-    "Submit when finished.",
-    "Neil uses your answers to build the Oakfire Planning Brief and future Eighth Flame app foundation.",
+  const creates = [
+    {
+      title: "Oakfire Planning Brief",
+      body: "A clear blueprint for the food, story, brand, catering, website, content, and business direction.",
+    },
+    {
+      title: "Oakfire x Legacy Sanctum Opportunity",
+      body: "A partnership path showing how Oakfire could become the food, hospitality, and community layer inside Legacy Sanctum.",
+    },
+    {
+      title: "Eighth Flame Blueprint",
+      body: "Source material for your future personal OS - built around business, lifestyle, goals, money, health, content, cannabis strain notes, and Orion.",
+    },
+    {
+      title: "Build Prompts for Neil",
+      body: "Your answers become the source Neil uses to build the next app, systems, website, and strategy.",
+    },
+  ];
+  const guidance = [
+    "Be honest.",
+    "Skip anything you are unsure about.",
+    "Use voice if it helps.",
+    "Give examples when you can.",
+    "Don't worry about sounding polished.",
   ];
 
   return (
     <Shell {...props}>
-      <section className="flex flex-1 flex-col justify-center">
-        <HeroLogoEmblem />
-        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-gold">Oakfire by Octavian remote intake</p>
-          <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl">Oakfire Vision Intake & Planning</h1>
-          <p className="mt-5 max-w-2xl text-xl leading-8 text-bone">
-            A guided intake to help turn your barbecue vision into a real brand and future personal OS.
-          </p>
-          <div className="mt-8 max-w-2xl space-y-5 text-lg leading-8 text-ash">
-            <p className="text-bone">Octavian, this is the starting point.</p>
-            <p>
-              You supported me early when Groomed Gent Co. was still just an idea, and now I want to take everything
-              I've learned from building my brand, websites, systems, and AI tools and use it to help you build out the
-              vision for Oakfire.
+      <section className="relative -mx-5 -mt-5 overflow-hidden px-5 pb-12 pt-8 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(214,164,58,0.12),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(122,36,24,0.35),transparent_30%),radial-gradient(circle_at_14%_26%,rgba(27,45,36,0.72),transparent_34%),linear-gradient(180deg,rgba(14,13,11,0.38)_0%,rgba(14,13,11,0.94)_72%)]" />
+        <div className="mx-auto grid max-w-6xl items-center gap-10 py-8 lg:min-h-[76vh] lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="order-2 lg:order-1">
+            <p className="mb-4 inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-black uppercase tracking-[0.2em] text-gold">
+              Private Vision Intake
             </p>
-            <p>This intake has two parts.</p>
-            <p>
-              Part 1 is about Oakfire - the food, the story, the brand, catering, content, website, and what you want
-              the business to become.
+            <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl lg:text-7xl">Oakfire Vision Intake & Planning</h1>
+            <p className="mt-5 max-w-2xl text-xl leading-8 text-bone">
+              A private brand-building experience for Oakfire by Octavian.
             </p>
-            <p>
-              Part 2 is about Eighth Flame - the future personal OS app I may build for you. That app can support your
-              business, goals, lifestyle, finances, health, content, cannabis strain notes, real estate work if that
-              still matters, and your AI concierge Orion.
-            </p>
-            <p>
-              No need to overthink it. Just answer honestly in your own words. The better your answers are, the better
-              I can build the plan around you.
-            </p>
-          </div>
-          <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
-            <div className="oak-panel p-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 1: Oakfire Vision</h2>
-              <p className="mt-2 text-sm leading-6 text-ash">
-                Capture the story, food identity, business direction, website needs, catering goals, content strategy,
-                and Oakfire roadmap.
-              </p>
+            <div className="mt-8 max-w-2xl rounded-lg border border-gold/25 bg-coal/60 p-5 shadow-oak backdrop-blur">
+              <div className="mb-4 gold-divider" />
+              <div className="space-y-4 text-base leading-7 text-ash sm:text-lg sm:leading-8">
+                <p className="font-bold text-bone">Octavian,</p>
+                <p>You were one of the first people who believed in Groomed Gent Co. before it was anything more than an idea.</p>
+                <p>
+                  Now I want to take what I've learned from building my brand, websites, systems, AI tools, and business
+                  plans - and use it to help you shape Oakfire into something real.
+                </p>
+                <p className="font-bold text-bone">This intake is not just a form.</p>
+                <p>
+                  It is the starting point for your barbecue brand, the Oakfire x Legacy Sanctum opportunity, and the
+                  future personal OS I want to build for you: Eighth Flame, guided by Orion.
+                </p>
+                <p>
+                  Answer in your own words. Don't overthink it. The more honest you are, the better I can build around
+                  who you are, what you want, and where Oakfire can go.
+                </p>
+              </div>
             </div>
-            <div className="oak-panel p-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 2: Future Personal OS</h2>
-              <p className="mt-2 text-sm leading-6 text-ash">
-                Capture business tools, lifestyle support, finance tracking, health goals, cannabis strain library,
-                real estate support, AI concierge ideas, and weekly planning.
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <Link className="primary-button px-7 py-4" to="/session">
+                Start the Vision Intake
+              </Link>
+              <p className="max-w-md text-sm leading-6 text-ash">
+                Your answers save on this device while you work. When you submit, Neil will be able to review them.
               </p>
             </div>
           </div>
-          <div className="mt-5 max-w-2xl rounded-lg border border-gold/20 bg-soot/70 p-5">
-            <h2 className="text-sm font-black uppercase tracking-[0.16em] text-gold">What this session creates</h2>
-            <div className="mt-3 grid gap-2 text-sm font-semibold leading-6 text-bone sm:grid-cols-2">
-              <p>Oakfire Planning Brief</p>
-              <p>Brand and business direction</p>
-              <p>Future Personal OS Blueprint</p>
-              <p>Build prompts for the next app</p>
-              <p>Session backup</p>
-            </div>
+          <div className="order-1 lg:order-2">
+            <HeroLogoEmblem />
           </div>
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <Link className="primary-button" to="/session">
-              Start Intake
-            </Link>
-            <p className="max-w-md text-sm leading-6 text-ash">
-              Your answers save on this device as you go. You can type or use voice input if your browser supports it.
-            </p>
-          </div>
-          </div>
+        </div>
+      </section>
 
-          <div className="oak-card p-6">
-          <h2 className="text-2xl font-black text-bone">How this works</h2>
-          <ol className="mt-5 space-y-4">
-            {steps.map((step, index) => (
-              <li key={step} className="flex gap-4 rounded-md border border-gold/15 bg-coal/35 p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gold bg-gold/10 text-sm font-black text-gold">
-                  {index + 1}
-                </span>
-                <span className="font-semibold text-bone">{step}</span>
-              </li>
+      <section className="mx-auto grid w-full max-w-6xl gap-10 py-10">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">Private vision session</p>
+          <h2 className="mt-2 text-3xl font-black text-bone sm:text-5xl">What This Experience Creates</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {creates.map((item) => (
+              <div key={item.title} className="premium-card p-5">
+                <h3 className="text-xl font-black text-bone">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-ash">{item.body}</p>
+              </div>
             ))}
-          </ol>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">The path</p>
+          <h2 className="mt-2 text-3xl font-black text-bone sm:text-5xl">The Two-Part Journey</h2>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="premium-card p-6">
+              <div className="flex items-center gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-gold/45 bg-gold/15 text-xl font-black text-gold">1</span>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 1</p>
+                  <h3 className="mt-1 text-2xl font-black text-bone">Oakfire Vision Intake</h3>
+                </div>
+              </div>
+              <p className="mt-3 text-base leading-7 text-ash">
+                Story, food, name direction, brand identity, catering, website, content, business path, and Oakfire x
+                Legacy Sanctum.
+              </p>
+            </div>
+            <div className="premium-card p-6">
+              <div className="flex items-center gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-gold/45 bg-gold/15 text-xl font-black text-gold">2</span>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 2</p>
+                  <h3 className="mt-1 text-2xl font-black text-bone">Eighth Flame Personal OS Intake</h3>
+                </div>
+              </div>
+              <p className="mt-3 text-base leading-7 text-ash">
+                The future app built around you - business, personal systems, finances, health, real estate support if
+                relevant, strain library, and Orion.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="premium-card p-6">
+          <h2 className="text-3xl font-black text-bone">How to Answer</h2>
+          <p className="mt-3 max-w-3xl text-base leading-7 text-ash">
+            Speak naturally or type it out. This is not about perfect wording. It is about capturing the truth of what
+            you want to build. Your original answers stay saved, and Neil uses them to shape the planning brief.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {guidance.map((item) => (
+              <p key={item} className="rounded-md border border-gold/15 bg-coal/35 p-3 text-sm font-bold text-bone">
+                {item}
+              </p>
+            ))}
+          </div>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link className="primary-button px-7 py-4" to="/session">
+              Start the Vision Intake
+            </Link>
+            <p className="text-sm leading-6 text-ash">Your draft saves as you go. Submit when you are finished.</p>
           </div>
         </div>
       </section>
@@ -350,12 +557,16 @@ function SessionPage({
   const activeIntro =
     activeIntake === "oakfire"
       ? {
-          title: "Oakfire Vision Intake",
-          body: "This section is about your barbecue company: the story, food, brand, website, catering, content, and where you want Oakfire to go.",
+          eyebrow: "Part 1",
+          title: "Part 1: Oakfire Vision",
+          body: "This section is about the barbecue company - the food, the story, the identity, the business model, the Legacy Sanctum opportunity, and the path Oakfire could take.",
+          button: "Begin Oakfire Vision",
         }
       : {
-          title: "Eighth Flame Personal OS Intake",
-          body: "This section is about the future app Neil may build for you. It is bigger than Oakfire. It can support your business, lifestyle, finances, health, goals, content, cannabis strain notes, real estate work if relevant, and your AI concierge Orion.",
+          eyebrow: "Part 2",
+          title: "Part 2: Eighth Flame",
+          body: "This section is about the future personal OS Neil may build for you. Eighth Flame is bigger than Oakfire. It can support your business, lifestyle, goals, finances, health, cannabis strain notes, real estate work if relevant, and your AI concierge Orion.",
+          button: "Begin Eighth Flame Intake",
         };
   const total = activeQuestions.length;
   const requestedIndex = Number(searchParams.get("q"));
@@ -464,7 +675,7 @@ function SessionPage({
 
   return (
     <Shell session={session} clearSession={clearSession}>
-      <section className="mb-6 rounded-lg border border-gold/20 bg-soot/70 p-4">
+      <section className="mb-6 rounded-lg border border-gold/20 bg-soot/70 p-4 shadow-oak">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Self-guided intake</p>
@@ -476,9 +687,6 @@ function SessionPage({
           <div className="flex flex-wrap gap-2">
             <Link className="secondary-button" to="/review-answers">
               Review Answers
-            </Link>
-            <Link className="secondary-button" to="/export">
-              Backup / Export
             </Link>
           </div>
         </div>
@@ -545,8 +753,8 @@ function SessionPage({
         <article className="rounded-lg oak-card p-5 shadow-ember sm:p-8">
           {showPartIntro ? (
             <div className="grid min-h-[520px] place-items-center">
-              <div className="max-w-2xl text-center">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{activeLabel}</p>
+              <div className="premium-card max-w-3xl p-7 text-center sm:p-10">
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{activeIntro.eyebrow}</p>
                 <h2 className="mt-3 text-3xl font-black leading-tight text-bone sm:text-5xl">{activeIntro.title}</h2>
                 <p className="mt-5 text-lg leading-8 text-ash">{activeIntro.body}</p>
                 <p className="mt-5 rounded-lg border border-gold/15 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
@@ -559,17 +767,31 @@ function SessionPage({
                     setSearchParams({ part: activeIntake, q: String(index) });
                   }}
                 >
-                  Continue
+                  {activeIntro.button}
                 </button>
               </div>
             </div>
           ) : (
             <>
-          <div className="mb-6 border-b border-gold/15 pb-5">
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-gold">{activeLabel}</p>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">{item.category.name}</p>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-ash">{item.category.purpose}</p>
+          <div className={`mb-6 rounded-lg border p-5 ${item.category.id === "sanctum" ? "vision-opportunity" : "border-gold/15 bg-coal/35"}`}>
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-gold">
+                  {item.category.id === "sanctum" ? "Partnership Opportunity" : activeLabel}
+                </p>
+                <h2 className="text-2xl font-black text-bone">{item.category.name}</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-ash">{item.category.purpose}</p>
+              </div>
+              <span className="status-pill">
+                {index + 1}/{total}
+              </span>
+            </div>
+            <div className="mt-4 h-2 rounded-full bg-white/10" aria-label={`${progress}% complete`}>
+              <div className="h-2 rounded-full bg-gradient-to-r from-gold to-[#E8C56D]" style={{ width: `${progress}%` }} />
+            </div>
           </div>
+
+          {item.category.id === "sanctum" && <SanctumTeachingCards />}
 
           <p className="text-sm font-semibold text-ash">Question {index + 1}</p>
           <h2 className="mt-2 text-2xl font-bold leading-snug text-bone sm:text-4xl">{item.text}</h2>
@@ -609,7 +831,7 @@ function SessionPage({
             </label>
             <textarea
               id="original-answer"
-              className="mt-2 min-h-[18rem] w-full rounded-lg oak-panel p-4 text-lg leading-8 text-bone outline-none ring-gold/30 placeholder:text-iron focus:border-gold focus:ring-4"
+              className="answer-surface mt-2 min-h-[18rem] w-full p-4 text-lg leading-8 text-bone outline-none placeholder:text-iron"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Octavian's answer goes here, in his own words..."
@@ -669,14 +891,42 @@ function SessionPage({
 
 function ReviewAnswersPage({ session, clearSession, completeIntake }: SessionProps) {
   const navigate = useNavigate();
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const oakfireSkipped = skippedInQuestions(flatQuestions.map((question) => question.id), session);
   const personalSkipped = skippedInQuestions(flatPersonalOsQuestions.map((question) => question.id), session);
   const oakfireFollowUp = followUpInQuestions(flatQuestions.map((question) => question.id), session);
   const personalFollowUp = followUpInQuestions(flatPersonalOsQuestions.map((question) => question.id), session);
 
-  const submit = () => {
-    completeIntake();
-    navigate("/complete");
+  const submit = async () => {
+    setIsSubmitting(true);
+    setSubmitMessage("Saving your completed intake...");
+    const timestamp = new Date().toISOString();
+    const completedSession: SessionState = {
+      ...session,
+      stage: "Completed",
+      completedAt: session.completedAt || timestamp,
+      updatedAt: timestamp,
+      lastSavedAt: timestamp,
+    };
+    try {
+      const saved = await apiJson<StoredSubmission>("/api/submissions", {
+        method: "POST",
+        body: JSON.stringify({
+          submitterName: "Octavian",
+          session: completedSession,
+          planningOutputs: buildPlanningOutputs(completedSession),
+        }),
+      });
+      localStorage.setItem("octavian-company-vision-submission-id", saved.id);
+      completeIntake();
+      navigate("/complete");
+    } catch (error) {
+      const details = error instanceof Error ? ` ${error.message}` : "";
+      setSubmitMessage(`Something went wrong while saving your intake. Please do not close this page yet. Try submitting again or let Neil know.${details}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -698,15 +948,80 @@ function ReviewAnswersPage({ session, clearSession, completeIntake }: SessionPro
           <Link className="secondary-button" to="/session">
             Continue Intake
           </Link>
-          <button className="primary-button" onClick={submit}>
-            Submit / Finish
+          <button className="primary-button" onClick={submit} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit"}
           </button>
         </div>
+        {submitMessage && <p className="mt-4 rounded-lg border border-gold/20 bg-coal/35 p-3 text-sm font-semibold text-bone">{submitMessage}</p>}
       </section>
 
       <AnswerReviewGroup title="Part 1: Oakfire Answers" part="oakfire" categoriesToShow={categories} session={session} />
       <AnswerReviewGroup title="Part 2: Eighth Flame Answers" part="eighth-flame" categoriesToShow={personalOsCategories} session={session} />
     </Shell>
+  );
+}
+
+function SanctumTeachingCards() {
+  return (
+    <section className="mb-7 grid gap-4">
+      <div className="vision-opportunity rounded-lg p-5">
+        <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Partnership Opportunity</p>
+        <h2 className="mt-2 text-2xl font-black text-bone">Oakfire x Legacy Sanctum</h2>
+        <p className="mt-2 text-base font-semibold leading-7 text-bone">
+          Food, hospitality, and community built into the Legacy Sanctum experience.
+        </p>
+        <div className="mt-4 space-y-3 text-sm leading-6 text-bone">
+          <p>
+            Legacy Sanctum is being built as more than a grooming space. It is a future home for men's grooming,
+            wellness, confidence, community, events, and elevated experiences.
+          </p>
+          <p>Oakfire could become the food and hospitality layer inside that world.</p>
+          <p>
+            Instead of trying to jump straight into a food truck, restaurant, or full-time BBQ operation, Oakfire could
+            start with controlled experiences inside Legacy Sanctum: private tastings, member BBQ nights, preorder plate
+            drops, catering pickups, and event food.
+          </p>
+          <p>
+            That gives Oakfire a real place to start, a way to test demand, a content engine, a professional brand
+            presence, and a partnership path with a business Neil is already building.
+          </p>
+          <p className="rounded-md border border-gold/20 bg-coal/35 p-3 font-semibold text-gold">
+            The goal is partnership, not random BBQ inside a barbershop.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-lg oak-panel p-5">
+        <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gold">Why this could work</h3>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {sanctumWhyPoints.map((point) => (
+            <p key={point} className="rounded-md border border-gold/15 bg-coal/35 p-3 text-sm leading-6 text-ash">
+              {point}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg oak-panel p-5">
+        <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gold">Possible growth path</h3>
+        <div className="mt-4 grid gap-3">
+          {sanctumGrowthPhases.map((phase) => (
+            <div key={phase.title} className="phase-card rounded-md border border-gold/15 bg-coal/35 p-4">
+              <p className="font-bold text-bone">{phase.title}</p>
+              <p className="mt-1 text-sm leading-6 text-ash">{phase.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-gold/20 bg-coal/45 p-5">
+        <h3 className="text-sm font-black uppercase tracking-[0.16em] text-gold">Why this gives Oakfire a clearer starting point</h3>
+        <p className="mt-3 text-sm leading-6 text-ash">
+          This path lets Oakfire test demand, collect customer feedback, create content, build catering leads, and show
+          up with a real brand presence before taking on the risk of a full food truck or restaurant.
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -783,63 +1098,71 @@ function AnswerReviewGroup({
 
 function CompletePage({ session, clearSession }: SessionProps) {
   const [message, setMessage] = useState("");
-  const backup = useMemo(() => JSON.stringify({ ...sessionBackup(session), exportedAt: new Date().toISOString() }, null, 2), [session]);
-  const sourceMaterial = useMemo(() => sourceMaterialForFuturePersonalOSText(session), [session]);
+  const submissionId =
+    typeof window !== "undefined" ? localStorage.getItem("octavian-company-vision-submission-id") : "";
+  const answerDownload = useMemo(() => originalAnswersText(session), [session]);
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(sourceMaterial);
-      setMessage("Copied source material for Neil.");
-    } catch {
-      setMessage("Could not copy automatically. Use the export page to copy manually.");
-    }
-  };
-
-  const download = (filename: string, content: string, type = "text/plain") => {
-    const blob = new Blob([content], { type });
+  const downloadAnswers = () => {
+    const blob = new Blob([answerDownload], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = filename;
+    anchor.download = "octavian-intake-answers.txt";
     anchor.click();
     URL.revokeObjectURL(url);
-    setMessage(`Downloaded ${filename}.`);
+    setMessage("Downloaded your answers.");
   };
 
   return (
     <Shell session={session} clearSession={clearSession}>
-      <section className="mx-auto max-w-4xl rounded-lg oak-card p-6 shadow-ember sm:p-8">
+      <section className="success-card mx-auto max-w-4xl rounded-lg oak-card p-6 text-center shadow-ember sm:p-8">
+        <img className="mx-auto mb-5 w-28 object-contain sm:w-36" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Intake complete</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Your intake is complete.</h1>
-        <div className="mt-5 space-y-4 text-lg leading-8 text-ash">
-          <p>Appreciate you filling this out.</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Your Oakfire intake is complete.</h1>
+        <div className="mx-auto mt-5 max-w-3xl space-y-4 text-lg leading-8 text-ash">
+          <p>Appreciate you taking the time to fill this out.</p>
           <p>
-            Your answers are saved, and Neil can use them to build your Oakfire Planning Brief and the source material
-            for Eighth Flame, your future personal OS guided by Orion.
+            Your intake is complete. Your answers have been saved so Neil can review them.
           </p>
-          <p>You do not need to do anything else right now unless Neil asks for follow-up details.</p>
+          <p>
+            Neil can use your saved answers to build your Oakfire Planning Brief, the Oakfire x Legacy Sanctum
+            opportunity plan, and the source material for Eighth Flame.
+          </p>
+          <p>This is the first step toward turning the food, the story, and the vision into something real.</p>
         </div>
-        <p className="mt-5 rounded-lg border border-gold/20 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
-          Your answers are saved on this device. If Neil needs a copy, use the download/export option or send him the
-          completed session link/file. This app does not automatically send anything to Neil.
+        {submissionId && (
+          <p className="mx-auto mt-5 max-w-3xl rounded-lg border border-gold/20 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
+            Backend confirmation code: {submissionId}
+          </p>
+        )}
+        <p className="mx-auto mt-5 max-w-3xl rounded-lg border border-gold/20 bg-coal/35 p-4 text-sm font-semibold leading-6 text-bone">
+          Your answers are also still saved on this device as a draft copy. This page does not send email or texts.
         </p>
         <p className="mt-3 text-sm text-ash">
           Completed: {formatLastSaved(session.completedAt)}. Last saved: {formatLastSaved(session.lastSavedAt)}.
         </p>
-        {message && <p className="mt-4 text-sm font-semibold text-gold">{message}</p>}
-        <div className="mt-7 flex flex-wrap gap-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="premium-card p-4">
+            <h2 className="text-lg font-black text-bone">Oakfire Vision submitted</h2>
+            <p className="mt-2 text-sm leading-6 text-ash">The brand, business, and food direction are ready for Neil to review.</p>
+          </div>
+          <div className="premium-card p-4">
+            <h2 className="text-lg font-black text-bone">Eighth Flame intake submitted</h2>
+            <p className="mt-2 text-sm leading-6 text-ash">The future personal OS direction is captured as source material.</p>
+          </div>
+          <div className="premium-card p-4">
+            <h2 className="text-lg font-black text-bone">Neil can build the brief</h2>
+            <p className="mt-2 text-sm leading-6 text-ash">Your answers are saved for the Oakfire Planning Brief.</p>
+          </div>
+        </div>
+        {message && <p className="mt-4 rounded-lg oak-panel p-3 text-sm font-semibold text-bone">{message}</p>}
+        <div className="mt-7 flex flex-wrap justify-center gap-3">
           <Link className="primary-button" to="/review-answers">
             Review My Answers
           </Link>
-          <button className="secondary-button" onClick={() => download("octavian-full-intake-backup.json", backup, "application/json")}>
-            Download Full Intake Backup
+          <button className="secondary-button" onClick={downloadAnswers}>
+            Download My Answers
           </button>
-          <button className="secondary-button" onClick={copy}>
-            Copy Source Material for Neil
-          </button>
-          <Link className="secondary-button" to="/export">
-            Export Tools
-          </Link>
         </div>
       </section>
     </Shell>
@@ -898,7 +1221,7 @@ function GeneratePage({ session, generateDraft, clearSession, answeredCount, ski
   };
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <Shell session={session} clearSession={clearSession} showPlanningTools>
       <NeilToolLabel />
       <SessionControlCenter
         session={session}
@@ -1045,7 +1368,7 @@ function ReviewPage({ session, saveFeedback, finalizeVision, generateDraft, clea
   };
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <Shell session={session} clearSession={clearSession} showPlanningTools>
       <NeilToolLabel />
       <SessionControlCenter
         session={session}
@@ -1237,7 +1560,7 @@ function VisionPage({ session, clearSession, generateDraft, answeredCount, skipp
   }, []);
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <Shell session={session} clearSession={clearSession} showPlanningTools>
       <NeilToolLabel />
       <SessionControlCenter
         session={session}
@@ -1352,7 +1675,7 @@ function ExportPage({ session, clearSession, importSession, generateDraft, answe
   const backup = JSON.stringify({ ...sessionBackup(session), exportedAt: new Date().toISOString() }, null, 2);
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <Shell session={session} clearSession={clearSession} showPlanningTools>
       <NeilToolLabel />
       <SessionControlCenter
         session={session}
@@ -1460,7 +1783,7 @@ function ImportPage({ session, clearSession, importSession }: SessionProps) {
   };
 
   return (
-    <Shell session={session} clearSession={clearSession}>
+    <Shell session={session} clearSession={clearSession} showPlanningTools>
       <NeilToolLabel />
       <section className="mx-auto max-w-3xl rounded-lg oak-card p-6 shadow-ember">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Safety tool</p>
@@ -1482,6 +1805,244 @@ function ImportPage({ session, clearSession, importSession }: SessionProps) {
         {message && <p className="mt-4 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
       </section>
     </Shell>
+  );
+}
+
+function AdminShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="app-frame">
+      <header className="app-header flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <Link to="/admin" className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.18em] text-gold">
+          <img className="h-11 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <span>Neil Planning Dashboard</span>
+        </Link>
+        <nav className="flex flex-wrap gap-2 text-sm">
+          <Link className="nav-link" to="/admin">
+            Submissions
+          </Link>
+          <Link className="nav-link" to="/">
+            Public Intake
+          </Link>
+        </nav>
+      </header>
+      <p className="mb-6 rounded-lg border border-ember/45 bg-ember/15 p-4 text-sm font-bold text-bone shadow-oak">
+        Admin planning view - for Neil only. Do not share this link.
+      </p>
+      {children}
+    </main>
+  );
+}
+
+function AdminPage() {
+  const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
+  const [message, setMessage] = useState("Loading submissions...");
+
+  useEffect(() => {
+    apiJson<SubmissionSummary[]>("/api/submissions")
+      .then((items) => {
+        const sorted = [...items].sort((a, b) => new Date(b.completedAt || b.createdAt).getTime() - new Date(a.completedAt || a.createdAt).getTime());
+        setSubmissions(sorted);
+        setMessage(sorted.length ? "" : "No submissions yet.");
+      })
+      .catch((error) => setMessage(error instanceof Error ? error.message : "Could not load submissions."));
+  }, []);
+
+  return (
+    <AdminShell>
+      <section className="admin-card rounded-lg oak-card p-6 shadow-ember">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Neil Planning Dashboard</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Octavian's Planning Command Desk</h1>
+        <p className="mt-3 max-w-3xl text-ash">
+          Review completed intake submissions, refresh planning outputs, and pull copy-ready source material for the Oakfire brief.
+        </p>
+        <p className="mt-3 text-sm font-semibold text-gold">Loaded from backend submissions.</p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <Metric label="Total submissions" value={`${submissions.length}`} />
+          <Metric label="Completed" value={`${submissions.length}`} />
+          <Metric label="Most recent" value={submissions[0]?.completedAt ? formatLastSaved(submissions[0].completedAt) : "None"} />
+        </div>
+        {message && <p className="mt-5 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
+        <div className="mt-6 grid gap-3">
+          {submissions.map((submission) => (
+            <div key={submission.id} className="rounded-lg border border-gold/15 bg-coal/35 p-4 shadow-oak">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-lg font-black text-bone">{submission.submitterName || "Octavian"}</p>
+                  <p className="mt-1 text-sm leading-6 text-ash">
+                    Completed {formatLastSaved(submission.completedAt)}. Oakfire answers: {submission.oakfireAnswerCount ?? "0"}. Eighth Flame answers: {submission.personalOsAnswerCount ?? "0"}. Planning outputs: {submission.hasPlanningOutputs ? "Generated" : "Not generated yet"}.
+                  </p>
+                </div>
+                <Link className="primary-button" to={`/admin/submissions/${submission.id}`}>
+                  Open Submission
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </AdminShell>
+  );
+}
+
+function AdminSubmissionPage() {
+  const { id } = useParams();
+  const [submission, setSubmission] = useState<StoredSubmission | null>(null);
+  const [message, setMessage] = useState("Loading submission...");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    apiJson<StoredSubmission>(`/api/submissions/${id}`)
+      .then((item) => {
+        setSubmission(item);
+        setMessage("");
+      })
+      .catch((error) => setMessage(error instanceof Error ? error.message : "Submission not found."));
+  }, [id]);
+
+  const session = storedSubmissionSession(submission);
+  const outputs = useMemo(
+    () => (submission && session ? planningOutputsForSubmission(submission, session) : null),
+    [submission, session],
+  );
+  const fullJson = useMemo(() => (submission ? JSON.stringify(submission, null, 2) : ""), [submission]);
+
+  const copy = async (label: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage(`Copied ${label}.`);
+    } catch {
+      setMessage(`Could not copy ${label}. Select and copy manually.`);
+    }
+  };
+
+  const download = (label: string, filename: string, content: string, type = "text/plain") => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setMessage(`Downloaded ${label}.`);
+  };
+
+  const generate = async () => {
+    if (!submission || !outputs) return;
+    setBusy(true);
+    setMessage("Generating planning outputs...");
+    try {
+      const updated = await apiJson<StoredSubmission>(`/api/submissions/${submission.id}/generate`, {
+        method: "POST",
+        body: JSON.stringify({ planningOutputs: { ...outputs, fullSubmissionJson: fullJson } }),
+      });
+      setSubmission(updated);
+      setMessage("Generated and saved planning outputs.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not generate planning outputs.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!submission || !session || !outputs) {
+    return (
+      <AdminShell>
+        <section className="rounded-lg oak-card p-6">
+          <h1 className="text-3xl font-black text-bone">Submission not found</h1>
+          <p className="mt-3 text-ash">{message || "Submission not found."}</p>
+          <Link className="secondary-button mt-5" to="/admin">
+            Back to Admin
+          </Link>
+        </section>
+      </AdminShell>
+    );
+  }
+
+  return (
+    <AdminShell>
+      <section className="admin-card mb-6 rounded-lg oak-card p-6 shadow-ember">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Submission detail</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">{submission.submitterName || "Octavian"} Intake</h1>
+        <p className="mt-3 text-ash">
+          Completed {formatLastSaved(submission.completedAt)}. Updated {formatLastSaved(submission.updatedAt)}. Original answers are preserved.
+        </p>
+        <p className="mt-3 inline-flex rounded-full border border-gold/25 bg-coal/45 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-gold">
+          Saved backend submission
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-4">
+          <Metric label="Submission id" value={submission.id} />
+          <Metric label="Oakfire answers" value={`${submission.oakfireAnswerCount ?? answeredInQuestions(flatQuestions.map((question) => question.id), session)}`} />
+          <Metric label="Eighth Flame answers" value={`${submission.personalOsAnswerCount ?? answeredInQuestions(flatPersonalOsQuestions.map((question) => question.id), session)}`} />
+          <Metric label="Status" value="Completed" />
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button className="primary-button" onClick={generate} disabled={busy}>
+            {busy ? "Generating..." : "Generate / Refresh Planning Outputs"}
+          </button>
+          <button className="secondary-button" onClick={() => download("Full Submission JSON", "oakfire-submission.json", fullJson, "application/json")}>
+            Download Full Submission JSON
+          </button>
+          <Link className="secondary-button" to="/admin">
+            Back to Submissions
+          </Link>
+        </div>
+        {message && <p className="mt-4 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <AdminOutputBlock title="Oakfire Original Answers" text={outputs.originalOakfireAnswers} copy={copy} download={download} filename="oakfire-original-answers.txt" />
+        <AdminOutputBlock title="Eighth Flame Original Answers" text={outputs.originalPersonalOsAnswers} copy={copy} download={download} filename="eighth-flame-original-answers.txt" />
+        <AdminOutputBlock title="Organized Oakfire Answers" text={outputs.organizedOakfireAnswers} copy={copy} download={download} filename="organized-oakfire-answers.txt" />
+        <AdminOutputBlock title="Organized Eighth Flame Answers" text={outputs.organizedPersonalOsAnswers} copy={copy} download={download} filename="organized-eighth-flame-answers.txt" />
+        <AdminOutputBlock title="Skipped / Needs Follow-Up" text={outputs.skippedAndFollowUp} copy={copy} download={download} filename="skipped-needs-follow-up.txt" />
+        <AdminOutputBlock title="Oakfire Planning Brief" text={outputs.oakfirePlanningBrief} copy={copy} download={download} filename="oakfire-planning-brief.txt" />
+        <AdminOutputBlock title="Eighth Flame Personal OS Blueprint" text={outputs.eighthFlameBlueprint} copy={copy} download={download} filename="eighth-flame-blueprint.txt" />
+        <AdminOutputBlock title="Oakfire x Legacy Sanctum Opportunity" text={outputs.oakfireLegacySanctumOpportunity} copy={copy} download={download} filename="oakfire-legacy-sanctum-opportunity.txt" />
+        <AdminOutputBlock title="Source Material for Future Eighth Flame App" text={outputs.sourceMaterialForFutureEighthFlameApp} copy={copy} download={download} filename="future-eighth-flame-source-material.txt" />
+        <AdminOutputBlock title="AI Prompt for Oakfire Final Vision Document" text={outputs.prompts.oakfireFinalVision} copy={copy} download={download} filename="oakfire-final-vision-prompt.txt" />
+        <AdminOutputBlock title="AI Prompt for Oakfire Website Plan" text={outputs.prompts.oakfireWebsitePlan} copy={copy} download={download} filename="oakfire-website-plan-prompt.txt" />
+        <AdminOutputBlock title="AI Prompt for Oakfire Brand Naming / Identity" text={outputs.prompts.oakfireBrandIdentity} copy={copy} download={download} filename="oakfire-brand-identity-prompt.txt" />
+        <AdminOutputBlock title="AI Prompt for Eighth Flame Personal OS Strategy" text={outputs.prompts.eighthFlameStrategy} copy={copy} download={download} filename="eighth-flame-strategy-prompt.txt" />
+        <AdminOutputBlock title="Codex Prompt for Eighth Flame Personal OS Foundation" text={outputs.prompts.codexFoundation} copy={copy} download={download} filename="codex-eighth-flame-foundation-prompt.txt" />
+        <AdminOutputBlock title="Full Submission JSON" text={fullJson} copy={copy} download={download} filename="full-submission.json" type="application/json" />
+      </div>
+    </AdminShell>
+  );
+}
+
+function AdminOutputBlock({
+  title,
+  text,
+  copy,
+  download,
+  filename,
+  type = "text/plain",
+}: {
+  title: string;
+  text: string;
+  copy: (label: string, text: string) => void;
+  download: (label: string, filename: string, content: string, type?: string) => void;
+  filename: string;
+  type?: string;
+}) {
+  return (
+    <section className="output-card rounded-lg oak-card p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl font-black text-bone">{title}</h2>
+        <div className="flex flex-wrap gap-2">
+          <button className="secondary-button" onClick={() => copy(title, text)}>
+            Copy
+          </button>
+          <button className="secondary-button" onClick={() => download(title, filename, text, type)}>
+            Download
+          </button>
+        </div>
+      </div>
+      <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-lg p-4 text-sm leading-6 text-ash">
+        {text || "Needs follow-up."}
+      </pre>
+    </section>
   );
 }
 
