@@ -1,5 +1,5 @@
 import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { categories, flatPersonalOsQuestions, flatQuestions, personalOsCategories, type Category } from "./data";
 import { formatLastSaved, type ReviewFeedback, SessionState, useSession } from "./storage";
 import {
@@ -38,6 +38,7 @@ type SessionProps = ReturnType<typeof useSession>;
 type PlanningOutputs = ReturnType<typeof buildPlanningOutputs>;
 type SubmissionSummary = {
   id: string;
+  submissionType?: "TEST" | "REAL" | string;
   submitterName: string;
   status?: string;
   createdAt: string;
@@ -151,6 +152,10 @@ function planningOutputsForSubmission(submission: StoredSubmission, session: Ses
   };
 }
 
+function submissionLabel(submission: Pick<SubmissionSummary, "submissionType" | "isTest">) {
+  return submission.submissionType === "TEST" || submission.isTest ? "TEST" : "REAL";
+}
+
 function markerClass(value: string) {
   if (value.includes("Strong")) return "border-gold/55 bg-gold/15 text-bone";
   if (value.includes("Missing") || value.includes("follow-up")) return "border-ember/55 bg-ember/20 text-bone";
@@ -233,6 +238,100 @@ const sanctumGrowthPhases = [
   },
 ];
 
+const introSlides = [
+  {
+    label: "Private Vision Experience",
+    headline: "Oakfire by Octavian",
+    subheadline: "This is where the vision starts.",
+    copy: [
+      "A private experience built to help you see what Oakfire can become - and what your next chapter could look like if you decide to go after it.",
+    ],
+    button: "Begin",
+  },
+  {
+    headline: "You have already built more than you think.",
+    copy: [
+      "You've done hard things.",
+      "You've worked hard labor.",
+      "You've sold houses.",
+      "You've flipped property.",
+      "You've operated rentals.",
+      "You know what it means to work, solve problems, and serve people well.",
+      "That is not random. That is proof.",
+      "You are more capable of building something real than you probably give yourself credit for.",
+    ],
+  },
+  {
+    headline: "Oakfire is not just food.",
+    copy: [
+      "Some people cook. Some people feed people. Some people create an experience that brings people together.",
+      "That's what you do.",
+      "Your food has presence. People remember it. People enjoy being around it. And you genuinely love doing it.",
+      "Oakfire is not a random side idea. It has the foundation of something real.",
+    ],
+  },
+  {
+    headline: "The way you serve people matters.",
+    copy: [
+      "You are good with people because you are genuine with people.",
+      "That matters in business. That matters in food. That matters in hospitality.",
+      "The same thing that makes people trust you is the same thing that can make Oakfire feel different.",
+    ],
+  },
+  {
+    headline: "You deserve to bet on yourself.",
+    copy: [
+      "There comes a point where what you love doing needs a real path.",
+      "Not just \"maybe one day.\" Not just random cooks here and there.",
+      "A real direction. A real brand. A real opportunity to build something that is yours.",
+    ],
+  },
+  {
+    headline: "Here's what this could become.",
+    copy: [
+      "This intake helps create the blueprint for the business, the offer, the customer experience, and the next steps.",
+    ],
+    cards: ["A real BBQ brand", "Catering and private events", "Plate drops and community nights", "Content, YouTube, and customer demand"],
+  },
+  {
+    headline: "Oakfire could become part of something bigger.",
+    copy: [
+      "Legacy Sanctum is being built as more than a grooming space.",
+      "It is a place for culture, confidence, community, and experiences.",
+      "Oakfire could become the food and hospitality layer inside that world: private tastings, member nights, plate drops, event food, catering leads, and a real starting place to grow.",
+      "This gives Oakfire a path without forcing you to jump straight into a truck or full restaurant.",
+    ],
+  },
+  {
+    headline: "This is bigger than a business form.",
+    copy: [
+      "This intake also helps shape Eighth Flame - the future personal OS Neil may build for you.",
+      "A system built around your business, your goals, your life, your money, your health, your ideas, your content, and the way you actually operate.",
+      "Not generic software. Something built around you.",
+      "AI Concierge: Orion",
+    ],
+  },
+  {
+    headline: "Why I built this for you.",
+    copy: [
+      "You were one of the first people who believed in Groomed Gent Co. before it was anything more than an idea.",
+      "Now I want to use what I've learned from building my own brand, systems, websites, AI tools, and business vision - and put that toward helping you shape Oakfire into something real.",
+      "I built this because I believe you are built for this path more than you may realize.",
+    ],
+  },
+  {
+    headline: "Let's build the vision the right way.",
+    copy: [
+      "Take your time.",
+      "Answer in your own words.",
+      "Don't worry about perfect wording.",
+      "The better your answers are, the better the plan can be built around you.",
+    ],
+    note: "Your draft saves on this device while you work. When you submit, Neil will be able to review it.",
+    button: "Start Intake",
+  },
+];
+
 function categoryProgress(category: Category, session: SessionState) {
   const answered = category.questions.filter((question) => session.answers[question.id]?.originalAnswer.trim()).length;
   const flagged = category.questions.some((question) => {
@@ -258,6 +357,7 @@ function App() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.44)_78%),linear-gradient(90deg,rgba(240,228,208,0.025)_1px,transparent_1px),linear-gradient(180deg,rgba(240,228,208,0.018)_1px,transparent_1px)] bg-[length:auto,72px_72px,72px_72px]" />
       <Routes>
         <Route path="/" element={<StartPage />} />
+        <Route path="/test" element={<TestGatewayPage />} />
         <Route path="/session" element={<SessionPage {...sessionApi} />} />
         <Route path="/review-answers" element={<ReviewAnswersPage {...sessionApi} />} />
         <Route path="/complete" element={<CompletePage {...sessionApi} />} />
@@ -386,63 +486,179 @@ function HeroLogoEmblem() {
 }
 
 function StartPage() {
+  const [slideIndex, setSlideIndex] = useState(0);
+  const slide = introSlides[slideIndex];
+  const isFirstSlide = slideIndex === 0;
+  const isLastSlide = slideIndex === introSlides.length - 1;
+  const goBack = () => setSlideIndex((current) => Math.max(0, current - 1));
+  const goNext = () => setSlideIndex((current) => Math.min(introSlides.length - 1, current + 1));
+
   return (
     <PublicShell>
-      <section className="relative -mx-4 -mt-4 overflow-hidden px-4 pb-10 pt-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(214,164,58,0.12),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(122,36,24,0.35),transparent_30%),radial-gradient(circle_at_14%_26%,rgba(27,45,36,0.72),transparent_34%),linear-gradient(180deg,rgba(14,13,11,0.38)_0%,rgba(14,13,11,0.94)_72%)]" />
-        <div className="mx-auto grid max-w-5xl items-center gap-8 py-4 lg:min-h-[72vh] lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="order-2 lg:order-1">
-            <p className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-gold">
-              Private Intake for Octavian
-            </p>
-            <h1 className="text-4xl font-black leading-tight text-bone sm:text-6xl">Oakfire Vision Intake & Planning</h1>
-            <div className="mt-6 max-w-2xl rounded-lg border border-gold/25 bg-coal/60 p-5 shadow-oak backdrop-blur">
-              <div className="mb-4 gold-divider" />
-              <div className="space-y-4 text-base leading-7 text-ash sm:text-lg sm:leading-8">
-                <p className="font-bold text-bone">Octavian,</p>
-                <p>You were one of the first people who believed in Groomed Gent Co. before it was anything more than an idea.</p>
-                <p>
-                  Now I want to take what I've learned from building my brand, websites, systems, AI tools, and business
-                  plans - and use it to help you shape Oakfire into something real.
-                </p>
-                <p>
-                  No need to overthink it. Just answer honestly in your own words. The better your answers are, the
-                  better I can build the plan around you.
-                </p>
-              </div>
-            </div>
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link className="primary-button px-7 py-4" to="/session">
-                Start Intake
-              </Link>
-              <p className="max-w-md text-sm leading-6 text-ash">
-                Answer one question at a time. Skip anything you are unsure about.
-              </p>
-            </div>
-          </div>
-          <div className="order-1 lg:order-2">
+      <section className="intro-stage relative -mx-4 -mt-4 flex min-h-[calc(100vh-5.5rem)] items-center overflow-hidden px-4 py-6 sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="hidden lg:block">
             <HeroLogoEmblem />
           </div>
-        </div>
-      </section>
 
-      <section className="mx-auto grid w-full max-w-5xl gap-4 pb-10 md:grid-cols-2">
-        <div className="premium-card p-5">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 1</p>
-          <h2 className="mt-2 text-2xl font-black text-bone">Oakfire Vision</h2>
-          <p className="mt-3 text-base leading-7 text-ash">
-            Story, food, brand, website, catering, content, business direction, and Oakfire x Legacy Sanctum.
-          </p>
-        </div>
-        <div className="premium-card p-5">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Part 2</p>
-          <h2 className="mt-2 text-2xl font-black text-bone">Eighth Flame OS</h2>
-          <p className="mt-3 text-base leading-7 text-ash">
-            The future personal OS for business, lifestyle, goals, finances, health, content, strain notes, real estate, and Orion.
-          </p>
+          <article className="intro-card mx-auto w-full max-w-3xl p-5 sm:p-8 lg:p-10">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <img className="h-14 w-auto object-contain sm:h-16" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">Octavian Side</p>
+                  <p className="mt-1 text-sm font-bold text-ash">Oakfire Vision Intake & Planning</p>
+                </div>
+              </div>
+              <p className="status-pill self-start sm:self-auto">
+                Slide {slideIndex + 1} of {introSlides.length}
+              </p>
+            </div>
+
+            <div key={slideIndex} className="intro-slide-content mt-8">
+              {slide.label && <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{slide.label}</p>}
+              <h1 className="mt-3 text-4xl font-black leading-tight text-bone sm:text-5xl lg:text-6xl">{slide.headline}</h1>
+              {slide.subheadline && <p className="mt-4 text-xl font-bold leading-8 text-gold sm:text-2xl">{slide.subheadline}</p>}
+              <div className="mt-6 gold-divider" />
+
+              <div className="mt-6 space-y-4 text-base leading-7 text-ash sm:text-lg sm:leading-8">
+                {slide.copy.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+
+              {slide.cards && (
+                <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                  {slide.cards.map((card) => (
+                    <div key={card} className="rounded-lg border border-gold/20 bg-coal/45 p-4">
+                      <p className="text-base font-black text-bone">{card}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {slide.note && (
+                <p className="mt-7 rounded-lg border border-gold/25 bg-gold/10 p-4 text-sm font-bold leading-6 text-bone">
+                  {slide.note}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-2" aria-label="Intro progress">
+              {introSlides.map((item, index) => (
+                <button
+                  key={item.headline}
+                  className={`h-2.5 rounded-full transition-all duration-200 ${index === slideIndex ? "w-9 bg-gold" : "w-2.5 bg-bone/25 hover:bg-gold/60"}`}
+                  aria-label={`Go to slide ${index + 1}`}
+                  onClick={() => setSlideIndex(index)}
+                />
+              ))}
+            </div>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
+              <button className="secondary-button w-full" onClick={goBack} disabled={isFirstSlide}>
+                Back
+              </button>
+              {isLastSlide ? (
+                <Link className="primary-button w-full" to="/session">
+                  Start Intake
+                </Link>
+              ) : (
+                <button className="primary-button w-full" onClick={goNext}>
+                  {slide.button || "Next"}
+                </button>
+              )}
+            </div>
+          </article>
         </div>
       </section>
     </PublicShell>
+  );
+}
+
+function TestGatewayPage() {
+  const [message, setMessage] = useState("");
+  const [createdSubmission, setCreatedSubmission] = useState<StoredSubmission | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const createTestSubmission = async () => {
+    setIsCreating(true);
+    setMessage("Creating full test submission...");
+    setCreatedSubmission(null);
+    try {
+      const saved = await apiJson<StoredSubmission>("/api/submissions/test", { method: "POST" });
+      setCreatedSubmission(saved);
+      setMessage("Test submission created.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not create test submission.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <main className="app-frame">
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Link to="/" className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.18em] text-gold">
+          <img className="h-11 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
+          <span>Oakfire Test Gateway</span>
+        </Link>
+        <Link className="secondary-button" to="/">
+          Public Intake
+        </Link>
+      </header>
+
+      <section className="mb-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Neil-only testing gateway</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Choose which side to test</h1>
+        <p className="mt-3 max-w-3xl text-ash">
+          Use this page to test Octavian's clean intake, then confirm the saved answers in Neil's admin workflow.
+        </p>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-2">
+        <article className="premium-card p-6 sm:p-8">
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Octavian Side</p>
+          <h2 className="mt-3 text-3xl font-black text-bone">Test Octavian Side</h2>
+          <p className="mt-4 text-base leading-7 text-ash">Open the same intake Octavian will complete.</p>
+          <Link className="primary-button mt-6" to="/">
+            Open Public Intake
+          </Link>
+        </article>
+
+        <article className="premium-card p-6 sm:p-8">
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Neil Side</p>
+          <h2 className="mt-3 text-3xl font-black text-bone">Open Neil Admin Side</h2>
+          <p className="mt-4 text-base leading-7 text-ash">
+            View submitted answers, generate planning outputs, and test backend saving.
+          </p>
+          <Link className="primary-button mt-6" to="/admin">
+            Open Admin Dashboard
+          </Link>
+        </article>
+      </section>
+
+      <section className="mt-5 rounded-lg oak-card p-5 shadow-oak">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">Fast backend check</p>
+            <h2 className="mt-2 text-2xl font-black text-bone">Create Full Test Submission</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-ash">
+              Instantly creates a realistic Octavian test submission so Neil can verify the admin workflow without answering every question.
+            </p>
+          </div>
+          <button className="secondary-button shrink-0" onClick={createTestSubmission} disabled={isCreating}>
+            {isCreating ? "Creating..." : "Create Full Test Submission"}
+          </button>
+        </div>
+        {message && <p className="mt-4 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
+        {createdSubmission && (
+          <Link className="primary-button mt-4" to={`/admin/submissions/${createdSubmission.id}`}>
+            Open Test Submission
+          </Link>
+        )}
+      </section>
+    </main>
   );
 }
 
@@ -1525,6 +1741,9 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <Link className="nav-link" to="/admin">
             Submissions
           </Link>
+          <Link className="nav-link" to="/test">
+            Testing Gateway
+          </Link>
           <Link className="nav-link" to="/admin/generate">
             Generate Planning Outputs
           </Link>
@@ -1553,10 +1772,9 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 function AdminPage() {
   const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
   const [message, setMessage] = useState("Loading submissions...");
-  const [testBusy, setTestBusy] = useState(false);
-  const [testMessage, setTestMessage] = useState("");
+  const [isCreatingTest, setIsCreatingTest] = useState(false);
 
-  const loadSubmissions = () => {
+  const loadSubmissions = useCallback(() => {
     setMessage("Loading submissions...");
     apiJson<SubmissionSummary[]>("/api/submissions")
       .then((items) => {
@@ -1565,66 +1783,74 @@ function AdminPage() {
         setMessage(sorted.length ? "" : "No submissions yet.");
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : "Could not load submissions."));
-  };
+  }, []);
 
-  useEffect(() => { loadSubmissions(); }, []);
+  useEffect(() => {
+    loadSubmissions();
+  }, [loadSubmissions]);
 
   const createTestSubmission = async () => {
-    setTestBusy(true);
-    setTestMessage("");
+    setIsCreatingTest(true);
+    setMessage("Creating full test submission...");
     try {
-      await apiJson("/api/submissions/test", { method: "POST" });
-      setTestMessage("Test submission created.");
-      loadSubmissions();
+      const saved = await apiJson<StoredSubmission>("/api/submissions/test", { method: "POST" });
+      setSubmissions((current) => [
+        {
+          id: saved.id,
+          submissionType: saved.submissionType,
+          submitterName: saved.submitterName,
+          status: saved.status,
+          createdAt: saved.createdAt,
+          updatedAt: saved.updatedAt,
+          completedAt: saved.completedAt,
+          answeredCount: saved.answeredCount,
+          oakfireAnswerCount: saved.oakfireAnswerCount,
+          personalOsAnswerCount: saved.personalOsAnswerCount,
+          hasPlanningOutputs: Boolean(saved.planningOutputs?.generatedAt),
+        },
+        ...current,
+      ]);
+      setMessage("Test submission created.");
     } catch (error) {
-      setTestMessage(error instanceof Error ? error.message : "Could not create test submission.");
+      setMessage(error instanceof Error ? error.message : "Could not create test submission.");
     } finally {
-      setTestBusy(false);
+      setIsCreatingTest(false);
     }
   };
 
   return (
     <AdminShell>
       <section className="admin-card rounded-lg oak-card p-6 shadow-ember">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Neil Planning Dashboard</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Octavian's Planning Command Desk</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Neil Admin Side</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Neil Admin Side</h1>
         <p className="mt-3 max-w-3xl text-ash">
-          Review completed intake submissions, refresh planning outputs, and pull copy-ready source material for the Oakfire brief.
+          Submitted intake answers and planning outputs.
         </p>
         <p className="mt-3 text-sm font-semibold text-gold">Loaded from backend submissions.</p>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <Metric label="Total submissions" value={`${submissions.length}`} />
-          <Metric label="Real submissions" value={`${submissions.filter((s) => !s.isTest).length}`} />
+          <Metric label="Completed" value={`${submissions.length}`} />
           <Metric label="Most recent" value={submissions[0]?.completedAt ? formatLastSaved(submissions[0].completedAt) : "None"} />
         </div>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            className="secondary-button border-ember/50 bg-ember/10 text-bone hover:bg-ember/20"
-            onClick={createTestSubmission}
-            disabled={testBusy}
-          >
-            {testBusy ? "Creating..." : "Create Full Test Submission"}
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button className="primary-button" onClick={createTestSubmission} disabled={isCreatingTest}>
+            {isCreatingTest ? "Creating..." : "Create Full Test Submission"}
           </button>
-          {testMessage && (
-            <p className="text-sm font-semibold text-gold">{testMessage}</p>
-          )}
+          <Link className="secondary-button" to="/test">
+            Testing Gateway
+          </Link>
         </div>
         {message && <p className="mt-5 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
         <div className="mt-6 grid gap-3">
           {submissions.map((submission) => (
-            <div
-              key={submission.id}
-              className={`rounded-lg border p-4 shadow-oak ${submission.isTest ? "border-ember/40 bg-ember/8" : "border-gold/15 bg-coal/35"}`}
-            >
+            <div key={submission.id} className="rounded-lg border border-gold/15 bg-coal/35 p-4 shadow-oak">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <span className={submissionLabel(submission) === "TEST" ? "status-pill border-ember/55 bg-ember/15 text-bone" : "status-pill"}>
+                      {submissionLabel(submission)}
+                    </span>
                     <p className="text-lg font-black text-bone">{submission.submitterName || "Octavian"}</p>
-                    {submission.isTest ? (
-                      <span className="rounded border border-ember/60 bg-ember/20 px-2 py-0.5 text-xs font-black uppercase tracking-[0.14em] text-bone">TEST</span>
-                    ) : (
-                      <span className="rounded border border-gold/40 bg-gold/15 px-2 py-0.5 text-xs font-black uppercase tracking-[0.14em] text-gold">REAL</span>
-                    )}
                   </div>
                   <p className="mt-1 text-sm leading-6 text-ash">
                     Completed {formatLastSaved(submission.completedAt)}. Oakfire answers: {submission.oakfireAnswerCount ?? "0"}. Eighth Flame answers: {submission.personalOsAnswerCount ?? "0"}. Planning outputs: {submission.hasPlanningOutputs ? "Generated" : "Not generated yet"}.
@@ -1721,20 +1947,16 @@ function AdminSubmissionPage() {
     <AdminShell>
       <section className="admin-card mb-6 rounded-lg oak-card p-6 shadow-ember">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Submission detail</p>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-black text-bone sm:text-5xl">{submission.submitterName || "Octavian"} Intake</h1>
-          {submission.isTest ? (
-            <span className="rounded border border-ember/60 bg-ember/20 px-3 py-1 text-sm font-black uppercase tracking-[0.14em] text-bone">TEST</span>
-          ) : (
-            <span className="rounded border border-gold/40 bg-gold/15 px-3 py-1 text-sm font-black uppercase tracking-[0.14em] text-gold">REAL</span>
-          )}
-        </div>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">{submission.submitterName || "Octavian"} Intake</h1>
         <p className="mt-3 text-ash">
           Completed {formatLastSaved(submission.completedAt)}. Updated {formatLastSaved(submission.updatedAt)}. Original answers are preserved.
         </p>
-        <p className="mt-3 inline-flex rounded-full border border-gold/25 bg-coal/45 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-gold">
-          Saved backend submission
-        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className={submissionLabel(submission) === "TEST" ? "status-pill border-ember/55 bg-ember/15 text-bone" : "status-pill"}>
+            {submissionLabel(submission)}
+          </span>
+          <span className="status-pill">Saved backend submission</span>
+        </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
           <Metric label="Submission id" value={submission.id} />
           <Metric label="Oakfire answers" value={`${submission.oakfireAnswerCount ?? answeredInQuestions(flatQuestions.map((question) => question.id), session)}`} />
