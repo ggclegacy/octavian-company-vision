@@ -1,5 +1,5 @@
 import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { categories, flatPersonalOsQuestions, flatQuestions, personalOsCategories, type Category } from "./data";
 import { formatLastSaved, type ReviewFeedback, SessionState, useSession } from "./storage";
 import {
@@ -120,6 +120,8 @@ function fallbackSubmissionSession(submission: StoredSubmission): SessionState {
     updatedAt: submission.updatedAt || timestamp,
     stage: "Completed",
     currentQuestionIndex: 0,
+    currentPart: "oakfire",
+    publicStep: "review",
     answers: {
       ...(submission.oakfireAnswers || {}),
       ...(submission.personalOsAnswers || {}),
@@ -131,6 +133,8 @@ function fallbackSubmissionSession(submission: StoredSubmission): SessionState {
     finalizedAt: null,
     completedAt: submission.completedAt || timestamp,
     lastSavedAt: submission.updatedAt || timestamp,
+    submittedAt: submission.completedAt || timestamp,
+    submissionId: submission.id || null,
   };
 }
 
@@ -168,6 +172,23 @@ function completionScore(answeredCount: number) {
 
 function totalQuestionCount() {
   return flatQuestions.length + flatPersonalOsQuestions.length;
+}
+
+function hasUnfinishedDraft(session: SessionState) {
+  if (session.completedAt || session.stage === "Completed") return false;
+  return Object.values(session.answers).some((answer) => answer.originalAnswer.trim() || answer.skippedAt || answer.followUpNeeded);
+}
+
+function currentPartLabel(session: SessionState) {
+  return session.currentPart === "eighth-flame" ? "Part 2: Eighth Flame OS" : "Part 1: Oakfire Vision";
+}
+
+function resumeHref(session: SessionState) {
+  if (session.publicStep === "review") return "/review-answers";
+  const part = session.currentPart || "oakfire";
+  const total = part === "eighth-flame" ? flatPersonalOsQuestions.length : flatQuestions.length;
+  const index = Math.max(0, Math.min(total - 1, session.currentQuestionIndex || 0));
+  return `/session?part=${part}&q=${index}`;
 }
 
 function nextRecommendedAction(session: SessionState, answeredCount: number) {
@@ -356,7 +377,7 @@ function App() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(27,45,36,0.72),transparent_34%),radial-gradient(circle_at_50%_105%,rgba(122,36,24,0.32),transparent_32%),radial-gradient(circle_at_8%_8%,rgba(214,164,58,0.1),transparent_24%),linear-gradient(180deg,#0E0D0B_0%,#12110E_42%,#0E0D0B_100%)]" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.44)_78%),linear-gradient(90deg,rgba(240,228,208,0.025)_1px,transparent_1px),linear-gradient(180deg,rgba(240,228,208,0.018)_1px,transparent_1px)] bg-[length:auto,72px_72px,72px_72px]" />
       <Routes>
-        <Route path="/" element={<StartPage />} />
+        <Route path="/" element={<StartPage {...sessionApi} />} />
         <Route path="/test" element={<TestGatewayPage />} />
         <Route path="/session" element={<SessionPage {...sessionApi} />} />
         <Route path="/review-answers" element={<ReviewAnswersPage {...sessionApi} />} />
@@ -485,13 +506,20 @@ function HeroLogoEmblem() {
   );
 }
 
-function StartPage() {
+function StartPage({ session, answeredCount, clearSession }: SessionProps) {
   const [slideIndex, setSlideIndex] = useState(0);
   const slide = introSlides[slideIndex];
   const isFirstSlide = slideIndex === 0;
   const isLastSlide = slideIndex === introSlides.length - 1;
+  const draftAvailable = hasUnfinishedDraft(session);
   const goBack = () => setSlideIndex((current) => Math.max(0, current - 1));
   const goNext = () => setSlideIndex((current) => Math.min(introSlides.length - 1, current + 1));
+  const startOver = () => {
+    if (window.confirm("This will erase the saved draft on this device. Continue?")) {
+      clearSession();
+      setSlideIndex(0);
+    }
+  };
 
   return (
     <PublicShell>
@@ -515,6 +543,29 @@ function StartPage() {
               </p>
             </div>
 
+            {draftAvailable && (
+              <section className="mt-6 rounded-lg border border-gold/25 bg-coal/55 p-4 shadow-oak sm:p-5">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-gold">Saved Draft Found</p>
+                <h2 className="mt-2 text-2xl font-black text-bone">Saved Draft Found</h2>
+                <p className="mt-3 text-sm leading-6 text-ash">
+                  You have a saved intake draft on this device. You can continue where you left off or start over.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <Metric label="Questions answered" value={`${answeredCount}/${totalQuestionCount()}`} />
+                  <Metric label="Current part" value={currentPartLabel(session)} />
+                  <Metric label="Last saved" value={formatLastSaved(session.lastSavedAt)} />
+                </div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <Link className="primary-button" to={resumeHref(session)}>
+                    Continue Draft
+                  </Link>
+                  <button className="danger-button" onClick={startOver}>
+                    Start Over
+                  </button>
+                </div>
+              </section>
+            )}
+
             <div key={slideIndex} className="intro-slide-content mt-8">
               {slide.label && <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{slide.label}</p>}
               <h1 className="mt-3 text-4xl font-black leading-tight text-bone sm:text-5xl lg:text-6xl">{slide.headline}</h1>
@@ -525,6 +576,12 @@ function StartPage() {
                 {slide.copy.map((line) => (
                   <p key={line}>{line}</p>
                 ))}
+                {isFirstSlide && (
+                  <p>
+                    This is a longer intake, so you do not have to finish it all at once. Your draft saves on this
+                    device, and you can come back later before submitting.
+                  </p>
+                )}
               </div>
 
               {slide.cards && (
@@ -668,12 +725,16 @@ function SessionPage({
   setCurrentQuestionIndex,
   skipQuestion,
   setFollowUpNeeded,
+  saveResumePosition,
 }: SessionProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialPart = searchParams.get("part") === "eighth-flame" ? "eighth-flame" : "oakfire";
+  const initialPart = searchParams.get("part") === "eighth-flame" ? "eighth-flame" : session.currentPart || "oakfire";
   const [activeIntake, setActiveIntake] = useState<"oakfire" | "eighth-flame">(initialPart);
   const [showPartIntro, setShowPartIntro] = useState(() => !searchParams.get("q"));
+  const [saveLaterShown, setSaveLaterShown] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const savingTimer = useRef<number | null>(null);
   const activeQuestions = activeIntake === "oakfire" ? flatQuestions : flatPersonalOsQuestions;
   const activePartNumber = activeIntake === "oakfire" ? 1 : 2;
   const activeIntro =
@@ -706,17 +767,34 @@ function SessionPage({
     setFollowUpChecked(Boolean(session.answers[item.id]?.followUpNeeded));
   }, [item.id, session.answers]);
 
+  useEffect(() => {
+    saveResumePosition(activeIntake, index, "session");
+  }, [activeIntake, index, saveResumePosition]);
+
+  useEffect(() => {
+    return () => {
+      if (savingTimer.current) window.clearTimeout(savingTimer.current);
+    };
+  }, []);
+
+  const flashSaving = () => {
+    setIsSavingDraft(true);
+    if (savingTimer.current) window.clearTimeout(savingTimer.current);
+    savingTimer.current = window.setTimeout(() => setIsSavingDraft(false), 650);
+  };
   const save = () => saveOriginalAnswer(item.id, draft);
   const switchIntake = (nextIntake: "oakfire" | "eighth-flame", intro = true) => {
     setActiveIntake(nextIntake);
     setShowPartIntro(intro);
     setCurrentQuestionIndex(0);
+    saveResumePosition(nextIntake, 0, "session");
     setSearchParams({ part: nextIntake });
   };
   const goTo = (nextIndex: number) => {
     save();
     const safeIndex = Math.max(0, Math.min(total - 1, nextIndex));
     setCurrentQuestionIndex(safeIndex);
+    saveResumePosition(activeIntake, safeIndex, "session");
     setShowPartIntro(false);
     setSearchParams({ part: activeIntake, q: String(safeIndex) });
   };
@@ -727,7 +805,10 @@ function SessionPage({
     }
     save();
     if (activeIntake === "oakfire") switchIntake("eighth-flame", true);
-    else navigate("/review-answers");
+    else {
+      saveResumePosition(activeIntake, index, "review");
+      navigate("/review-answers");
+    }
   };
   const backFlow = () => {
     if (index > 0) {
@@ -740,6 +821,7 @@ function SessionPage({
       setShowPartIntro(false);
       const previousIndex = flatQuestions.length - 1;
       setCurrentQuestionIndex(previousIndex);
+      saveResumePosition("oakfire", previousIndex, "session");
       setSearchParams({ part: "oakfire", q: String(previousIndex) });
     }
   };
@@ -749,18 +831,42 @@ function SessionPage({
     if (index < total - 1) {
       const nextIndex = Math.max(0, Math.min(total - 1, index + 1));
       setCurrentQuestionIndex(nextIndex);
+      saveResumePosition(activeIntake, nextIndex, "session");
       setSearchParams({ part: activeIntake, q: String(nextIndex) });
     } else if (activeIntake === "oakfire") {
       switchIntake("eighth-flame", true);
     } else {
+      saveResumePosition(activeIntake, index, "review");
       navigate("/review-answers");
     }
+  };
+  const saveForLater = () => {
+    save();
+    saveResumePosition(activeIntake, index, "session");
+    setSaveLaterShown(true);
   };
 
   return (
     <PublicShell>
       <section className="mx-auto w-full max-w-3xl">
-        {showPartIntro ? (
+        {saveLaterShown ? (
+          <article className="premium-card p-7 text-center shadow-ember sm:p-10">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">Draft saved</p>
+            <h1 className="mt-3 text-3xl font-black leading-tight text-bone sm:text-5xl">Your progress is saved.</h1>
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-ash">
+              Your progress is saved on this device. You can come back to this same link later and continue where you
+              left off.
+            </p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <button className="primary-button w-full" onClick={() => setSaveLaterShown(false)}>
+                Return to Intake
+              </button>
+              <Link className="secondary-button w-full" to="/">
+                Back to Start
+              </Link>
+            </div>
+          </article>
+        ) : showPartIntro ? (
           <article className="premium-card p-7 text-center shadow-ember sm:p-10">
             <p className="text-sm font-black uppercase tracking-[0.18em] text-gold">{activeIntro.eyebrow}</p>
             <h1 className="mt-3 text-3xl font-black leading-tight text-bone sm:text-5xl">{activeIntro.title}</h1>
@@ -769,6 +875,7 @@ function SessionPage({
               className="primary-button mt-8 w-full sm:w-auto"
               onClick={() => {
                 setShowPartIntro(false);
+                saveResumePosition(activeIntake, index, "session");
                 setSearchParams({ part: activeIntake, q: String(index) });
               }}
             >
@@ -778,12 +885,18 @@ function SessionPage({
         ) : (
           <article className="oak-card p-5 shadow-ember sm:p-8">
             <div className="mb-6">
-              <p className="text-sm font-bold text-ash">
-                Part {activePartNumber} of 2 &bull; Question {index + 1} of {total}
-              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-bold text-ash">
+                  Part {activePartNumber} of 2 &bull; Question {index + 1} of {total}
+                </p>
+                <p className="status-pill self-start sm:self-auto">
+                  {isSavingDraft ? "Saving..." : session.lastSavedAt ? `Last saved: ${formatLastSaved(session.lastSavedAt)}` : "Draft saved"}
+                </p>
+              </div>
               <div className="mt-3 h-2 rounded-full bg-white/10" aria-label={`${progress}% complete`}>
                 <div className="h-2 rounded-full bg-gradient-to-r from-gold to-[#E8C56D]" style={{ width: `${progress}%` }} />
               </div>
+              <p className="mt-3 text-sm font-semibold text-ash">You can save and continue later anytime.</p>
             </div>
 
             <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{item.category.name}</p>
@@ -813,10 +926,14 @@ function SessionPage({
                   const value = event.target.value;
                   setDraft(value);
                   saveOriginalAnswer(item.id, value);
+                  saveResumePosition(activeIntake, index, "session");
+                  flashSaving();
                 }}
                 placeholder="Answer in your own words..."
               />
-              <p className="mt-2 text-sm font-semibold text-ash">Draft autosaves on this device.</p>
+              <p className="mt-2 text-sm font-semibold text-ash">
+                {isSavingDraft ? "Saving..." : "Draft saved on this device."}
+              </p>
             </div>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -830,6 +947,8 @@ function SessionPage({
                     const next = !followUpChecked;
                     setFollowUpChecked(next);
                     setFollowUpNeeded(item.id, next);
+                    saveResumePosition(activeIntake, index, "session");
+                    flashSaving();
                   }}
                 >
                   {followUpChecked ? "Needs follow-up marked" : "Needs follow-up"}
@@ -845,6 +964,9 @@ function SessionPage({
                 Save & Continue
               </button>
             </div>
+            <button className="secondary-button mt-3 w-full" onClick={saveForLater}>
+              Save & Continue Later
+            </button>
           </article>
         )}
       </section>
@@ -852,10 +974,14 @@ function SessionPage({
   );
 }
 
-function ReviewAnswersPage({ session, completeIntake }: SessionProps) {
+function ReviewAnswersPage({ session, completeIntake, saveResumePosition }: SessionProps) {
   const navigate = useNavigate();
   const [submitMessage, setSubmitMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    saveResumePosition(session.currentPart || "eighth-flame", session.currentQuestionIndex || 0, "review");
+  }, [saveResumePosition, session.currentPart, session.currentQuestionIndex]);
 
   const submit = async () => {
     setIsSubmitting(true);
@@ -878,7 +1004,7 @@ function ReviewAnswersPage({ session, completeIntake }: SessionProps) {
         }),
       });
       localStorage.setItem("octavian-company-vision-submission-id", saved.id);
-      completeIntake();
+      completeIntake(saved.id);
       navigate("/complete");
     } catch (error) {
       const details = error instanceof Error ? ` ${error.message}` : "";
@@ -897,7 +1023,7 @@ function ReviewAnswersPage({ session, completeIntake }: SessionProps) {
           You can leave blanks if you're unsure. Neil can follow up later.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <Link className="secondary-button" to="/session">
+          <Link className="secondary-button" to={resumeHref(session)}>
             Continue Intake
           </Link>
           <button className="primary-button" onClick={submit} disabled={isSubmitting}>

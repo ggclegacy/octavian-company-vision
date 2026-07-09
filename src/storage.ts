@@ -27,12 +27,17 @@ export type ReviewFeedback = {
   makeStronger: string;
 };
 
+export type IntakePart = "oakfire" | "eighth-flame";
+export type PublicStep = "session" | "review";
+
 export type SessionState = {
   sessionId: string;
   createdAt: string;
   updatedAt: string;
   stage: "Not Started" | "Answering" | "Draft Generated" | "Reviewing" | "Finalized" | "Completed";
   currentQuestionIndex: number;
+  currentPart: IntakePart;
+  publicStep: PublicStep;
   answers: Record<string, AnswerRecord>;
   generatedVisionDraft: VisionSection[];
   generatedVisionDraftUpdatedAt: string | null;
@@ -41,6 +46,8 @@ export type SessionState = {
   finalizedAt: string | null;
   completedAt: string | null;
   lastSavedAt: string | null;
+  submittedAt: string | null;
+  submissionId: string | null;
 };
 
 function now() {
@@ -55,6 +62,8 @@ function newSession(): SessionState {
     updatedAt: createdAt,
     stage: "Not Started",
     currentQuestionIndex: 0,
+    currentPart: "oakfire",
+    publicStep: "session",
     answers: {},
     generatedVisionDraft: [],
     generatedVisionDraftUpdatedAt: null,
@@ -63,6 +72,8 @@ function newSession(): SessionState {
     finalizedAt: null,
     completedAt: null,
     lastSavedAt: null,
+    submittedAt: null,
+    submissionId: null,
   };
 }
 
@@ -126,6 +137,8 @@ function normalizeSession(value: unknown): SessionState {
     updatedAt: raw.updatedAt || raw.lastUpdated || fresh.updatedAt,
     stage: raw.stage || "Not Started",
     currentQuestionIndex: Number.isFinite(raw.currentQuestionIndex) ? Number(raw.currentQuestionIndex) : 0,
+    currentPart: raw.currentPart === "eighth-flame" ? "eighth-flame" : "oakfire",
+    publicStep: raw.publicStep === "review" ? "review" : "session",
     answers,
     generatedVisionDraft: Array.isArray(raw.generatedVisionDraft) ? raw.generatedVisionDraft : [],
     generatedVisionDraftUpdatedAt: raw.generatedVisionDraftUpdatedAt || null,
@@ -134,6 +147,8 @@ function normalizeSession(value: unknown): SessionState {
     finalizedAt: raw.finalizedAt || null,
     completedAt: raw.completedAt || null,
     lastSavedAt: raw.lastSavedAt || raw.lastUpdated || null,
+    submittedAt: raw.submittedAt || null,
+    submissionId: raw.submissionId || null,
   };
   if (imported.completedAt) imported.stage = "Completed";
   else if (imported.finalizedVision.length) imported.stage = "Finalized";
@@ -228,6 +243,19 @@ export function useSession() {
   const setCurrentQuestionIndex = useCallback(
     (index: number) => {
       touch((current) => ({ ...current, currentQuestionIndex: index }));
+    },
+    [touch],
+  );
+
+  const saveResumePosition = useCallback(
+    (part: IntakePart, index: number, publicStep: PublicStep = "session") => {
+      touch((current) => ({
+        ...current,
+        stage: current.completedAt ? "Completed" : current.stage === "Not Started" ? "Answering" : current.stage,
+        currentPart: part,
+        currentQuestionIndex: Math.max(0, index),
+        publicStep,
+      }));
     },
     [touch],
   );
@@ -334,11 +362,14 @@ export function useSession() {
     return finalized;
   }, [touch]);
 
-  const completeIntake = useCallback(() => {
+  const completeIntake = useCallback((submissionId?: string) => {
     touch((current, timestamp) => ({
       ...current,
       stage: "Completed",
       completedAt: current.completedAt || timestamp,
+      submittedAt: timestamp,
+      submissionId: submissionId || current.submissionId,
+      publicStep: "review",
     }));
   }, [touch]);
 
@@ -388,6 +419,7 @@ export function useSession() {
     generateDraft,
     skipQuestion,
     setFollowUpNeeded,
+    saveResumePosition,
     saveFeedback,
     finalizeVision,
     completeIntake,
