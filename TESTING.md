@@ -1,5 +1,39 @@
 # FINAL END-TO-END TEST CHECKLIST
 
+## CRITICAL SUBMISSION SAVE TEST
+
+1. Run `npm run dev`.
+2. Open the public intake.
+3. Start the intake.
+4. Enter a unique phrase in one Oakfire answer: `UNIQUE_OAKFIRE_TEST_123`.
+5. Enter a unique phrase in one Oakfire x Legacy Sanctum answer: `UNIQUE_SANCTUM_TEST_123`.
+6. Enter a unique phrase in one Eighth Flame answer: `UNIQUE_EIGHTH_FLAME_TEST_123`.
+7. Review answers.
+8. Submit the intake.
+9. Confirm completion screen appears.
+10. Open `/admin`.
+11. Confirm the new `REAL` submission appears.
+12. Open the submission.
+13. Expand raw answers if needed.
+14. Confirm all three unique phrases appear.
+15. Click `Generate / Refresh Planning Outputs`.
+16. Confirm `Executive Summary` appears.
+17. Confirm `Oakfire Planning Brief` appears.
+18. Confirm `Oakfire x Legacy Sanctum Opportunity` appears.
+19. Confirm `Eighth Flame Blueprint` appears.
+20. Confirm `Copy-Ready Master Prompt` appears.
+21. Copy Master Prompt.
+22. Download Full Submission JSON.
+23. Confirm downloaded JSON includes the unique phrases.
+24. Restart server.
+25. Reopen `/admin` and confirm submission still exists.
+
+## DETERMINISTIC BACKEND TEST
+
+Run `npm run test:e2e`.
+
+This script starts the Express app with a temporary data directory, posts a realistic backend submission with unique Oakfire, Legacy Sanctum, and Eighth Flame phrases, verifies the submission appears in list/detail routes, generates planning outputs from the saved submission, verifies test-submission cleanup deletes only test data, confirms persistence across a server restart, and removes its temporary data afterward.
+
 1. Run npm install.
 2. Run npm run dev.
 3. Open public app.

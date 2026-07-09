@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const isDev = process.argv.includes("--dev");
-const dataDir = path.join(__dirname, "data");
+const dataDir = process.env.OAKFIRE_DATA_DIR ? path.resolve(process.env.OAKFIRE_DATA_DIR) : path.join(__dirname, "data");
 const submissionsPath = path.join(dataDir, "submissions.json");
 
 app.use(express.json({ limit: "10mb" }));
@@ -399,6 +399,12 @@ if (isDev) {
   });
 }
 
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Oakfire Vision Intake ${isDev ? "dev" : "production"} server running on port ${port}`);
-});
+const shouldListen = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+
+if (shouldListen) {
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Oakfire Vision Intake ${isDev ? "dev" : "production"} server running on port ${port}`);
+  });
+}
+
+export { app };
