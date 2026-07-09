@@ -156,6 +156,110 @@ function planningOutputsForSubmission(submission: StoredSubmission, session: Ses
   };
 }
 
+function firstAnswer(session: SessionState, questionIds: string[]) {
+  for (const questionId of questionIds) {
+    const value = session.answers[questionId]?.originalAnswer.trim();
+    if (value) return value;
+  }
+  return "Needs follow-up.";
+}
+
+function shortValue(value: string, maxLength = 320) {
+  if (!value || value === "Needs follow-up.") return "Needs follow-up.";
+  return value.length > maxLength ? `${value.slice(0, maxLength).trim()}...` : value;
+}
+
+function buildExecutiveSummary(session: SessionState, outputs: PlanningOutputs) {
+  const followUps = Object.values(session.answers)
+    .filter((answer) => answer.followUpNeeded || answer.skippedAt || !answer.originalAnswer.trim())
+    .slice(0, 6)
+    .map((answer) => answer.questionText);
+  return [
+    "WHAT OCTAVIAN WANTS",
+    shortValue(firstAnswer(session, ["goals-six-months", "goals-two-years", "goals-dream", "final-understand"])),
+    "",
+    "WHAT OAKFIRE COULD BECOME",
+    shortValue(firstAnswer(session, ["goals-dream", "goals-two-years", "brand-feel", "food-plate"])),
+    "",
+    "BEST FIRST BUSINESS PATH",
+    shortValue(firstAnswer(session, ["goals-paths", "cat-events", "sanctum-starting-model", "sanctum-first-test"])),
+    "",
+    "OAKFIRE X LEGACY SANCTUM FIT",
+    shortValue(firstAnswer(session, ["sanctum-exciting", "sanctum-imagine", "sanctum-premium", "sanctum-reputation"])),
+    "",
+    "FUTURE EIGHTH FLAME APP DIRECTION",
+    shortValue(firstAnswer(session, ["os-purpose-help", "os-oakfire-first", "os-feel-three", "os-orion-role"])),
+    "",
+    "KEY FOLLOW-UP QUESTIONS",
+    followUps.length ? followUps.map((question) => `- ${question}`).join("\n") : "Needs follow-up.",
+    "",
+    "RECOMMENDED NEXT MOVE",
+    "Build the Oakfire Planning Brief and Oakfire x Legacy Sanctum first-test plan from this submission, then clarify pricing, capacity, food costs, and the first Eighth Flame module priorities.",
+    "",
+    "PLANNING OUTPUT STATUS",
+    outputs.generatedAt ? `Generated ${formatLastSaved(outputs.generatedAt)}.` : "Needs follow-up.",
+  ].join("\n");
+}
+
+function buildNeilShouldBuildNext(session: SessionState) {
+  return [
+    "WHAT NEIL SHOULD BUILD FIRST FOR OAKFIRE",
+    "- A clear Oakfire Planning Brief with brand direction, first offer, catering path, and website structure.",
+    "- An Oakfire x Legacy Sanctum first-test event plan with menu, capacity, pricing assumptions, and success metrics.",
+    "",
+    "WHAT NEIL SHOULD CLARIFY WITH OCTAVIAN",
+    "- Pricing confidence, food costs, current equipment capacity, available cook frequency, and first event readiness.",
+    "- Whether the first public offer should be catering, plate drops, private tasting nights, or a Legacy Sanctum member night.",
+    "",
+    "WHAT BELONGS IN THE FUTURE EIGHTH FLAME APP",
+    "- Oakfire command tools, lead tracking, catering quotes, prep checklists, content planning, simple finance tracking, and Orion guidance.",
+    "",
+    "WHAT TO IGNORE OR POSTPONE",
+    "- Full restaurant planning, advanced CRM features, complicated dashboards, real estate tools, and anything that does not help Oakfire validate demand first.",
+    "",
+    "RECOMMENDED NEXT MOVES",
+    "1. Build Oakfire Planning Brief from this submission.",
+    "2. Create Oakfire x Legacy Sanctum first-test event plan.",
+    "3. Define the first Oakfire website structure.",
+    "4. Build Eighth Flame app foundation later using the generated Codex prompt.",
+    "5. Ask follow-up questions around pricing, capacity, food costs, and first module priorities.",
+    "",
+    "MOST RELEVANT SOURCE SIGNAL",
+    shortValue(firstAnswer(session, ["final-understand", "goals-real-business", "os-oakfire-useful"])),
+  ].join("\n");
+}
+
+function buildCopyReadyMasterPrompt(outputs: PlanningOutputs, executiveSummary: string, buildNext: string) {
+  return [
+    "Using the source material below, help Neil build the complete Oakfire by Octavian vision plan and implementation strategy.",
+    "",
+    "Create a polished strategic plan that includes brand direction, Oakfire x Legacy Sanctum partnership model, website plan, catering path, content strategy, future Eighth Flame app strategy, follow-up questions, and a step-by-step build roadmap.",
+    "",
+    "Do not invent missing details. If information is missing, mark it as Needs follow-up.",
+    "",
+    "EXECUTIVE SUMMARY",
+    executiveSummary,
+    "",
+    "OAKFIRE PLANNING BRIEF",
+    outputs.oakfirePlanningBrief || "Needs follow-up.",
+    "",
+    "OAKFIRE X LEGACY SANCTUM OPPORTUNITY",
+    outputs.oakfireLegacySanctumOpportunity || "Needs follow-up.",
+    "",
+    "EIGHTH FLAME PERSONAL OS BLUEPRINT",
+    outputs.eighthFlameBlueprint || "Needs follow-up.",
+    "",
+    "WHAT NEIL SHOULD BUILD NEXT",
+    buildNext,
+    "",
+    "SKIPPED / NEEDS FOLLOW-UP / OPEN DECISIONS",
+    outputs.skippedAndFollowUp || "Needs follow-up.",
+    "",
+    "SOURCE MATERIAL FOR FUTURE EIGHTH FLAME APP",
+    outputs.sourceMaterialForFutureEighthFlameApp || "Needs follow-up.",
+  ].join("\n");
+}
+
 function submissionLabel(submission: Pick<SubmissionSummary, "submissionType" | "isTest">) {
   return submission.submissionType === "TEST" || submission.isTest ? "TEST" : "REAL";
 }
@@ -1894,24 +1998,12 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <Link className="nav-link" to="/test">
             Testing Gateway
           </Link>
-          <Link className="nav-link" to="/admin/generate">
-            Generate Planning Outputs
-          </Link>
-          <Link className="nav-link" to="/admin/review">
-            Review Planning Draft
-          </Link>
-          <Link className="nav-link" to="/admin/vision">
-            Oakfire Planning Brief
-          </Link>
-          <Link className="nav-link" to="/admin/export">
-            Export Source Material
-          </Link>
           <Link className="nav-link" to="/">
             Public Intake
           </Link>
         </nav>
       </header>
-      <p className="mb-6 rounded-lg border border-ember/45 bg-ember/15 p-4 text-sm font-bold text-bone shadow-oak">
+      <p className="mb-6 rounded-lg border border-ember/35 bg-ember/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-bone shadow-oak">
         Admin planning view - for Neil only. Do not share this link.
       </p>
       {children}
@@ -1923,6 +2015,9 @@ function AdminPage() {
   const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
   const [message, setMessage] = useState("Loading submissions...");
   const [isCreatingTest, setIsCreatingTest] = useState(false);
+  const [isClearingTests, setIsClearingTests] = useState(false);
+  const realSubmissions = submissions.filter((submission) => submissionLabel(submission) === "REAL");
+  const testSubmissions = submissions.filter((submission) => submissionLabel(submission) === "TEST");
 
   const loadSubmissions = useCallback(() => {
     setMessage("Loading submissions...");
@@ -1968,53 +2063,109 @@ function AdminPage() {
     }
   };
 
+  const clearTestSubmissions = async () => {
+    if (!window.confirm("This will delete test submissions only. Real submissions will stay saved. Continue?")) return;
+    setIsClearingTests(true);
+    setMessage("Clearing test submissions...");
+    try {
+      const result = await apiJson<{ deletedCount: number; remainingCount: number }>("/api/submissions/test", { method: "DELETE" });
+      setSubmissions((current) => current.filter((submission) => submissionLabel(submission) !== "TEST"));
+      setMessage(`Cleared ${result.deletedCount} test submission${result.deletedCount === 1 ? "" : "s"}. Real submissions stayed saved.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not clear test submissions.");
+    } finally {
+      setIsClearingTests(false);
+    }
+  };
+
   return (
     <AdminShell>
       <section className="admin-card rounded-lg oak-card p-6 shadow-ember">
+        <img className="mb-4 h-14 w-auto object-contain" src={oakfireLogoSrc} alt="Oakfire by Octavian" />
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Neil Admin Side</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Neil Admin Side</h1>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Neil Planning Dashboard</h1>
         <p className="mt-3 max-w-3xl text-ash">
-          Submitted intake answers and planning outputs.
+          Submitted Oakfire intakes and planning outputs.
         </p>
-        <p className="mt-3 text-sm font-semibold text-gold">Loaded from backend submissions.</p>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <Metric label="Total submissions" value={`${submissions.length}`} />
-          <Metric label="Completed" value={`${submissions.length}`} />
-          <Metric label="Most recent" value={submissions[0]?.completedAt ? formatLastSaved(submissions[0].completedAt) : "None"} />
+          <Metric label="Real submissions" value={`${realSubmissions.length}`} />
+          <Metric label="Test submissions" value={`${testSubmissions.length}`} />
+          <Metric label="Most recent real" value={realSubmissions[0]?.completedAt ? formatLastSaved(realSubmissions[0].completedAt) : "None"} />
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
-          <button className="primary-button" onClick={createTestSubmission} disabled={isCreatingTest}>
-            {isCreatingTest ? "Creating..." : "Create Full Test Submission"}
-          </button>
-          <Link className="secondary-button" to="/test">
-            Testing Gateway
+          <Link className="secondary-button" to="/">
+            View Public Intake
           </Link>
+          <button className="primary-button" onClick={createTestSubmission} disabled={isCreatingTest}>
+            {isCreatingTest ? "Creating..." : "Create Test Submission"}
+          </button>
+          <button className="danger-button" onClick={clearTestSubmissions} disabled={isClearingTests || !testSubmissions.length}>
+            {isClearingTests ? "Clearing..." : "Clear Test Submissions"}
+          </button>
+          <button className="secondary-button" onClick={loadSubmissions}>
+            Refresh Submissions
+          </button>
         </div>
         {message && <p className="mt-5 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
-        <div className="mt-6 grid gap-3">
-          {submissions.map((submission) => (
-            <div key={submission.id} className="rounded-lg border border-gold/15 bg-coal/35 p-4 shadow-oak">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={submissionLabel(submission) === "TEST" ? "status-pill border-ember/55 bg-ember/15 text-bone" : "status-pill"}>
-                      {submissionLabel(submission)}
-                    </span>
-                    <p className="text-lg font-black text-bone">{submission.submitterName || "Octavian"}</p>
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-ash">
-                    Completed {formatLastSaved(submission.completedAt)}. Oakfire answers: {submission.oakfireAnswerCount ?? "0"}. Eighth Flame answers: {submission.personalOsAnswerCount ?? "0"}. Planning outputs: {submission.hasPlanningOutputs ? "Generated" : "Not generated yet"}.
-                  </p>
-                </div>
-                <Link className="primary-button" to={`/admin/submissions/${submission.id}`}>
-                  Open Submission
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
       </section>
+
+      <section className="mt-6 rounded-lg oak-card p-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.16em] text-gold">A. Real Submissions</p>
+            <h2 className="mt-1 text-2xl font-black text-bone">Ready for planning</h2>
+          </div>
+          <p className="text-sm font-semibold text-ash">{realSubmissions.length} real submission{realSubmissions.length === 1 ? "" : "s"}</p>
+        </div>
+        {realSubmissions.length ? (
+          <div className="grid gap-3">
+            {realSubmissions.map((submission) => (
+              <AdminSubmissionCard key={submission.id} submission={submission} />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-lg oak-panel p-4 text-sm font-semibold text-bone">
+            No real submissions yet. Test submissions are below.
+          </p>
+        )}
+      </section>
+
+      <details className="mt-6 rounded-lg oak-card p-5">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-gold">
+          B. Test Submissions ({testSubmissions.length})
+        </summary>
+        <div className="mt-4 grid gap-3">
+          {testSubmissions.length ? (
+            testSubmissions.map((submission) => <AdminSubmissionCard key={submission.id} submission={submission} />)
+          ) : (
+            <p className="rounded-lg oak-panel p-4 text-sm font-semibold text-bone">No test submissions saved.</p>
+          )}
+        </div>
+      </details>
     </AdminShell>
+  );
+}
+
+function AdminSubmissionCard({ submission }: { submission: SubmissionSummary }) {
+  return (
+    <div className="rounded-lg border border-gold/15 bg-coal/35 p-4 shadow-oak">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={submissionLabel(submission) === "TEST" ? "status-pill border-ember/55 bg-ember/15 text-bone" : "status-pill"}>
+              {submissionLabel(submission)}
+            </span>
+            <p className="text-lg font-black text-bone">{submission.submitterName || "Octavian"}</p>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-ash">
+            Completed {formatLastSaved(submission.completedAt)}. Planning status: {submission.hasPlanningOutputs ? "Generated" : "Not generated"}. Answers: {submission.oakfireAnswerCount ?? 0} Oakfire / {submission.personalOsAnswerCount ?? 0} Eighth Flame.
+          </p>
+        </div>
+        <Link className="primary-button" to={`/admin/submissions/${submission.id}`}>
+          Open Planning Brief
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -2040,6 +2191,15 @@ function AdminSubmissionPage() {
     [submission, session],
   );
   const fullJson = useMemo(() => (submission ? JSON.stringify(submission, null, 2) : ""), [submission]);
+  const executiveSummary = useMemo(
+    () => (session && outputs ? buildExecutiveSummary(session, outputs) : ""),
+    [session, outputs],
+  );
+  const neilShouldBuildNext = useMemo(() => (session ? buildNeilShouldBuildNext(session) : ""), [session]);
+  const copyReadyMasterPrompt = useMemo(
+    () => (outputs ? buildCopyReadyMasterPrompt(outputs, executiveSummary, neilShouldBuildNext) : ""),
+    [outputs, executiveSummary, neilShouldBuildNext],
+  );
 
   const copy = async (label: string, text: string) => {
     try {
@@ -2071,7 +2231,7 @@ function AdminSubmissionPage() {
         body: JSON.stringify({ planningOutputs: { ...outputs, fullSubmissionJson: fullJson } }),
       });
       setSubmission(updated);
-      setMessage("Generated and saved planning outputs.");
+      setMessage("Planning outputs generated from saved submission answers.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not generate planning outputs.");
     } finally {
@@ -2096,16 +2256,19 @@ function AdminSubmissionPage() {
   return (
     <AdminShell>
       <section className="admin-card mb-6 rounded-lg oak-card p-6 shadow-ember">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Submission detail</p>
-        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">{submission.submitterName || "Octavian"} Intake</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">Neil Admin Side</p>
+        <h1 className="mt-2 text-3xl font-black text-bone sm:text-5xl">Oakfire Planning Review</h1>
         <p className="mt-3 text-ash">
-          Completed {formatLastSaved(submission.completedAt)}. Updated {formatLastSaved(submission.updatedAt)}. Original answers are preserved.
+          {submission.submitterName || "Octavian"} completed this intake {formatLastSaved(submission.completedAt)}. Planning outputs are generated from the saved submission answers, with raw answers preserved below.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <span className={submissionLabel(submission) === "TEST" ? "status-pill border-ember/55 bg-ember/15 text-bone" : "status-pill"}>
             {submissionLabel(submission)}
           </span>
           <span className="status-pill">Saved backend submission</span>
+          <span className="status-pill">
+            {submission.planningOutputs?.generatedAt ? `Generated ${formatLastSaved(submission.planningOutputs.generatedAt)}` : "Planning not generated"}
+          </span>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-4">
           <Metric label="Submission id" value={submission.id} />
@@ -2114,36 +2277,50 @@ function AdminSubmissionPage() {
           <Metric label="Status" value="Completed" />
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
+          <Link className="secondary-button" to="/admin">
+            Back to Admin
+          </Link>
           <button className="primary-button" onClick={generate} disabled={busy}>
             {busy ? "Generating..." : "Generate / Refresh Planning Outputs"}
           </button>
-          <button className="secondary-button" onClick={() => download("Full Submission JSON", "oakfire-submission.json", fullJson, "application/json")}>
-            Download Full Submission JSON
+          <button className="secondary-button" onClick={() => copy("Copy-Ready Master Prompt for ChatGPT", copyReadyMasterPrompt)}>
+            Copy Master Prompt
           </button>
-          <Link className="secondary-button" to="/admin">
-            Back to Submissions
-          </Link>
+          <button className="secondary-button" onClick={() => download("Full Backup JSON", "oakfire-submission-backup.json", fullJson, "application/json")}>
+            Download Backup JSON
+          </button>
         </div>
         {message && <p className="mt-4 rounded-lg oak-panel p-4 text-sm font-semibold text-bone">{message}</p>}
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <AdminOutputBlock title="Oakfire Original Answers" text={outputs.originalOakfireAnswers} copy={copy} download={download} filename="oakfire-original-answers.txt" />
-        <AdminOutputBlock title="Eighth Flame Original Answers" text={outputs.originalPersonalOsAnswers} copy={copy} download={download} filename="eighth-flame-original-answers.txt" />
-        <AdminOutputBlock title="Organized Oakfire Answers" text={outputs.organizedOakfireAnswers} copy={copy} download={download} filename="organized-oakfire-answers.txt" />
-        <AdminOutputBlock title="Organized Eighth Flame Answers" text={outputs.organizedPersonalOsAnswers} copy={copy} download={download} filename="organized-eighth-flame-answers.txt" />
-        <AdminOutputBlock title="Skipped / Needs Follow-Up" text={outputs.skippedAndFollowUp} copy={copy} download={download} filename="skipped-needs-follow-up.txt" />
+      <div className="grid gap-5">
+        <AdminOutputBlock title="Executive Summary" text={executiveSummary} copy={copy} download={download} filename="executive-summary.txt" />
         <AdminOutputBlock title="Oakfire Planning Brief" text={outputs.oakfirePlanningBrief} copy={copy} download={download} filename="oakfire-planning-brief.txt" />
-        <AdminOutputBlock title="Eighth Flame Personal OS Blueprint" text={outputs.eighthFlameBlueprint} copy={copy} download={download} filename="eighth-flame-blueprint.txt" />
         <AdminOutputBlock title="Oakfire x Legacy Sanctum Opportunity" text={outputs.oakfireLegacySanctumOpportunity} copy={copy} download={download} filename="oakfire-legacy-sanctum-opportunity.txt" />
-        <AdminOutputBlock title="Source Material for Future Eighth Flame App" text={outputs.sourceMaterialForFutureEighthFlameApp} copy={copy} download={download} filename="future-eighth-flame-source-material.txt" />
-        <AdminOutputBlock title="AI Prompt for Oakfire Final Vision Document" text={outputs.prompts.oakfireFinalVision} copy={copy} download={download} filename="oakfire-final-vision-prompt.txt" />
-        <AdminOutputBlock title="AI Prompt for Oakfire Website Plan" text={outputs.prompts.oakfireWebsitePlan} copy={copy} download={download} filename="oakfire-website-plan-prompt.txt" />
-        <AdminOutputBlock title="AI Prompt for Oakfire Brand Naming / Identity" text={outputs.prompts.oakfireBrandIdentity} copy={copy} download={download} filename="oakfire-brand-identity-prompt.txt" />
-        <AdminOutputBlock title="AI Prompt for Eighth Flame Personal OS Strategy" text={outputs.prompts.eighthFlameStrategy} copy={copy} download={download} filename="eighth-flame-strategy-prompt.txt" />
-        <AdminOutputBlock title="Codex Prompt for Eighth Flame Personal OS Foundation" text={outputs.prompts.codexFoundation} copy={copy} download={download} filename="codex-eighth-flame-foundation-prompt.txt" />
-        <AdminOutputBlock title="Full Submission JSON" text={fullJson} copy={copy} download={download} filename="full-submission.json" type="application/json" />
+        <AdminOutputBlock title="Eighth Flame Personal OS Blueprint" text={outputs.eighthFlameBlueprint} copy={copy} download={download} filename="eighth-flame-blueprint.txt" />
+        <AdminOutputBlock title="What Neil Should Build Next" text={neilShouldBuildNext} copy={copy} download={download} filename="what-neil-should-build-next.txt" />
+        <AdminOutputBlock title="Copy-Ready Master Prompt for ChatGPT" text={copyReadyMasterPrompt} copy={copy} download={download} filename="copy-ready-master-prompt.txt" />
+        <AdminOutputBlock title="Codex Prompt for Eighth Flame Foundation" text={outputs.prompts.codexFoundation} copy={copy} download={download} filename="codex-eighth-flame-foundation-prompt.txt" />
       </div>
+
+      <details className="mt-6 rounded-lg oak-card p-5">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-gold">
+          Raw Answers and Backup
+        </summary>
+        <div className="mt-5 grid gap-5 xl:grid-cols-2">
+          <AdminOutputBlock title="Oakfire Original Answers" text={outputs.originalOakfireAnswers} copy={copy} download={download} filename="oakfire-original-answers.txt" />
+          <AdminOutputBlock title="Eighth Flame Original Answers" text={outputs.originalPersonalOsAnswers} copy={copy} download={download} filename="eighth-flame-original-answers.txt" />
+          <AdminOutputBlock title="Organized Oakfire Answers" text={outputs.organizedOakfireAnswers} copy={copy} download={download} filename="organized-oakfire-answers.txt" />
+          <AdminOutputBlock title="Organized Eighth Flame Answers" text={outputs.organizedPersonalOsAnswers} copy={copy} download={download} filename="organized-eighth-flame-answers.txt" />
+          <AdminOutputBlock title="Skipped / Needs Follow-Up" text={outputs.skippedAndFollowUp} copy={copy} download={download} filename="skipped-needs-follow-up.txt" />
+          <AdminOutputBlock title="Source Material for Future Eighth Flame App" text={outputs.sourceMaterialForFutureEighthFlameApp} copy={copy} download={download} filename="future-eighth-flame-source-material.txt" />
+          <AdminOutputBlock title="AI Prompt for Oakfire Final Vision Document" text={outputs.prompts.oakfireFinalVision} copy={copy} download={download} filename="oakfire-final-vision-prompt.txt" />
+          <AdminOutputBlock title="AI Prompt for Oakfire Website Plan" text={outputs.prompts.oakfireWebsitePlan} copy={copy} download={download} filename="oakfire-website-plan-prompt.txt" />
+          <AdminOutputBlock title="AI Prompt for Oakfire Brand Naming / Identity" text={outputs.prompts.oakfireBrandIdentity} copy={copy} download={download} filename="oakfire-brand-identity-prompt.txt" />
+          <AdminOutputBlock title="AI Prompt for Eighth Flame Personal OS Strategy" text={outputs.prompts.eighthFlameStrategy} copy={copy} download={download} filename="eighth-flame-strategy-prompt.txt" />
+          <AdminOutputBlock title="Full Submission JSON" text={fullJson} copy={copy} download={download} filename="full-submission.json" type="application/json" />
+        </div>
+      </details>
     </AdminShell>
   );
 }

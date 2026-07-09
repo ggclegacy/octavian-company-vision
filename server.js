@@ -272,6 +272,18 @@ app.post("/api/submissions/test", async (_req, res) => {
   }
 });
 
+app.delete("/api/submissions/test", async (_req, res) => {
+  try {
+    const submissions = await readSubmissions();
+    const realSubmissions = submissions.filter((submission) => !(submission.isTest || submission.submissionType === "TEST"));
+    const deletedCount = submissions.length - realSubmissions.length;
+    await writeSubmissions(realSubmissions);
+    res.json({ deletedCount, remainingCount: realSubmissions.length });
+  } catch {
+    res.status(500).json({ error: "Could not clear test submissions." });
+  }
+});
+
 app.get("/api/submissions", async (_req, res) => {
   try {
     const submissions = await readSubmissions();
