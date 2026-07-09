@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { categories, flatPersonalOsQuestions, flatQuestions, personalOsCategories, type Category } from "./data";
 import { formatLastSaved, type ReviewFeedback, SessionState, useSession } from "./storage";
@@ -374,8 +374,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-coal text-bone">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(27,45,36,0.72),transparent_34%),radial-gradient(circle_at_50%_105%,rgba(122,36,24,0.32),transparent_32%),radial-gradient(circle_at_8%_8%,rgba(214,164,58,0.1),transparent_24%),linear-gradient(180deg,#0E0D0B_0%,#12110E_42%,#0E0D0B_100%)]" />
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.44)_78%),linear-gradient(90deg,rgba(240,228,208,0.025)_1px,transparent_1px),linear-gradient(180deg,rgba(240,228,208,0.018)_1px,transparent_1px)] bg-[length:auto,72px_72px,72px_72px]" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_0%,rgba(38,63,51,0.46),transparent_32%),radial-gradient(circle_at_82%_14%,rgba(214,164,58,0.09),transparent_22%),radial-gradient(circle_at_50%_108%,rgba(122,36,24,0.12),transparent_30%),linear-gradient(180deg,#070706_0%,#0A0908_42%,#070706_100%)]" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.58)_78%),linear-gradient(90deg,rgba(240,228,208,0.012)_1px,transparent_1px),linear-gradient(180deg,rgba(240,228,208,0.008)_1px,transparent_1px)] bg-[length:auto,96px_96px,96px_96px]" />
+      <SideSwitcher />
       <Routes>
         <Route path="/" element={<StartPage {...sessionApi} />} />
         <Route path="/test" element={<TestGatewayPage />} />
@@ -399,6 +400,29 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
+  );
+}
+
+function SideSwitcher() {
+  const location = useLocation();
+  const isAdminSide = location.pathname.startsWith("/admin");
+  const currentSide = isAdminSide ? "Neil Admin Side" : "Octavian Side";
+
+  return (
+    <aside className="side-switcher" aria-label="Side switcher">
+      <div className="side-switcher-status">
+        <span>Viewing</span>
+        <strong>{currentSide}</strong>
+      </div>
+      <div className="side-switcher-actions" aria-label="Switch side">
+        <Link className={!isAdminSide ? "side-switcher-option active" : "side-switcher-option"} to="/">
+          Octavian Side
+        </Link>
+        <Link className={isAdminSide ? "side-switcher-option active" : "side-switcher-option"} to="/admin">
+          Neil Admin Side
+        </Link>
+      </div>
+    </aside>
   );
 }
 
@@ -1522,7 +1546,7 @@ function ReviewSection({
   const marker = sectionCompleteness(section, session.answers);
 
   return (
-    <section className="rounded-lg oak-card p-5">
+    <section className="export-output rounded-lg oak-card p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-bone">{section.title}</h2>
         <CompletenessMarker value={marker} />
@@ -2452,7 +2476,7 @@ function ExportBlock({
         </div>
       </div>
       {isCopied && <p className="mt-3 text-sm font-bold text-gold">{copied}</p>}
-      <pre className="mt-4 max-h-[620px] overflow-auto whitespace-pre-wrap rounded-lg bg-smoke p-4 text-sm leading-6 text-ash">
+      <pre className="mt-4 max-h-[620px] overflow-auto whitespace-pre-wrap rounded-lg p-4 text-sm leading-6 text-ash">
         {text}
       </pre>
     </section>
